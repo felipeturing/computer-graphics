@@ -1,4 +1,4 @@
-// Diplay a light blue window with its title "OpenGL is here" and size 1000*1000px.
+// Diplay a light blue window with its title "OpenGL is here" and size 1000*800px.
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
