@@ -1,3 +1,4 @@
+// This is the first example, for the computer graphics course
 #include<iostream>
 using namespace std; 
 int main(){
