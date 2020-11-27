@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <iostream>
 
-// GLEW (OpenGL Extension Library proveé mecanimos para determinar en run-time qué extensiones de opengl son soportadas) 
+// GLEW (OpenGL Extension Library proveé mecanimos para determinar en run-time qué extensiones de opengl son soportadas)
 #define GLEW_STATIC
 #include <GL/glew.h>
 // GLFW es una API para el manejo de ventanas.
