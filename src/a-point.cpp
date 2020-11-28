@@ -1,6 +1,6 @@
 /**
 author      : @felipeturing
-description : Display a light blue window with size 800*500px.
+description : Display a point on a window
 **/
 
 /**
@@ -50,6 +50,7 @@ GLuint createShaderProgram() {
     "void main(void) \n"
 
     "{gl_Position = vec4(0.0, 0.0, 0.0, 1.0);}";
+
     const char* fshaderSource =
     "#version 410 \n"
     "out vec4 color; \n"
