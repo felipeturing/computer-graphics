@@ -1,6 +1,8 @@
 /**
 author      : @felipeturing
-description : Display a light blue window with size 800*500px.
+description : Before we try writing shaders, let’s write a simple C++/OpenGL application
+that instantiates a GLFWwindow and sets its background color, display a light blue window with size 800*500px.
+book        : Computer Graphics Programming in OpenGL with C++ - V.Scoot Gordon and John Clevenger.
 **/
 
 /**
@@ -54,7 +56,7 @@ void display(GLFWwindow *window, double currentTime) {
     /**
     GL_COLOR_BUFFER_BIT : Referencia al color del buffer.
     glClear(GL_COLOR_BUFFER_BIT)
-    description: Limpia todos los colores del buffer que tiene opengl y asigna el color especificado en glClearColor(.)
+    description: Limpia el color buffer y asigna el color especificado above.
     **/
 	glClear(GL_COLOR_BUFFER_BIT);
 }
