@@ -39,7 +39,7 @@ entradas y salidas y muchas otras funcionalidades.
 using namespace std;
 
 /*
-    GLFWwindow : objeto que representa la ventana
+    GLFWwindow : objeto que representa la ventana, donde se va dibujar todas las primitivas de opengl que estamos usando.
 */
 void init(GLFWwindow *window) {
 }
