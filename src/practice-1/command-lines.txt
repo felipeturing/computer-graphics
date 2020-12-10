@@ -1,0 +1,27 @@
+Comandos para el buen desarrollo del curso.
+
+1. Instalación de programas y dependencias
+
+OpenGL :
+sudo apt-get install cmake libx11-dev xorg-dev libglu1-mesa-dev freeglut3-dev libglew1.5 libglew1.5-dev \
+libglu1-mesa libglu1-mesa-dev libgl1-mesa-glx libgl1-mesa-dev libglfw3-dev libglfw3
+
+Qt :
+sudo apt update
+sudo apt install build-essential
+sudo apt install qtcreator
+sudo apt install qt5-default
+sudo apt-get install qt5-doc qtbase5-examples qtbase5-doc-html
+
+2. Compilar :
+
+
+g++ [file] -lGL -std=c++11 -Wall -lGL -lGLU -lglut -lGLEW -lglfw -lX11 -lXxf86vm -lXrandr -lpthread -lXi -ldl -lXinerama -lXcursor
+
+Si existe algun problema al momento de compilar:
+/usr/bin/ld: cannot find -lGL
+collect2: error: ld returned 1 exit status
+
+Realizamos lo siguiente:
+locate libGL.so.1
+sudo ln -s /usr/lib/x86_64-linux-gnu/libGL.so.1 /usr/lib/libGL.so

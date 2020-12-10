@@ -7,6 +7,5 @@ void main(void){
 out vec4 color;
 layout (location = 0) in vec4 vertex; // recibe el vertice del Vertex Shader
 void main(void){
-    color = vertex*0.5 + (0.5,0.5,0.5,0.5);
-
+    color = vertex;
 }

@@ -1,12 +1,16 @@
+/*
+* author : @felipeturing
+* exercise : Modificar la pregunta anterior para mostrar un triangulo is  ́ osceles en lugar de uno recto.
+*/
 
 #define GLEW_STATIC
 #include <GL/glew.h>
-//#include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+
 #include <string>
 #include <fstream>
 
@@ -14,7 +18,7 @@
 
 GLuint renderingProgram;
 GLuint vao[numVAOs];
-
+unsigned int points=65;
 using namespace std;
 
 void printShaderLog(GLuint shader) {
@@ -71,8 +75,8 @@ GLuint createShaderProgram() {
     GLint fragCompiled;
     GLint linked;
 
-    string vertShaderStr = readShaderSource("vshader33.glsl");
-    string fragShaderStr = readShaderSource("fshader33.glsl");
+    string vertShaderStr = readShaderSource("vs.glsl");
+    string fragShaderStr = readShaderSource("fs.glsl");
 
     const char* vertShaderSrc = vertShaderStr.c_str();
     const char* fragShaderSrc = fragShaderStr.c_str();
@@ -110,7 +114,6 @@ GLuint createShaderProgram() {
         cout << "linking failed" << endl;
         printProgramLog(vfProgram);
     }
-
     return vfProgram;
 }
 
@@ -122,17 +125,19 @@ void init (GLFWwindow* window) {
 }
 
 void display(GLFWwindow* window, double currentTime) {
+    glClearColor(0.0, 0.0, 0.0, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+
     glUseProgram(renderingProgram);
-    glPointSize(30.0f);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDrawArrays(GL_LINE_STRIP, 0, points);
 }
 
 int main(void) {
     if (!glfwInit()) {exit(EXIT_FAILURE);}
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // I don't know what this does
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // and neither this
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     GLFWwindow* window = glfwCreateWindow(600, 600, "1.1", NULL, NULL);
     glfwMakeContextCurrent(window);
     if (glewInit() != GLEW_OK) {exit(EXIT_FAILURE);}
