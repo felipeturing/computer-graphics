@@ -11,4 +11,4 @@ layout (binding=0) uniform sampler2D samp;
 void main(void)
 {	gl_Position = proj_matrix * mv_matrix * vec4(pos,1.0);
 	tc = texCoord;
-} 
+}

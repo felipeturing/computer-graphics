@@ -6,8 +6,8 @@
 // Include GLEW
 #define GLEW_STATIC
 #include <GL/glew.h>
-//#include <opencv2/opencv.hpp>
-
+#include <opencv2/opencv.hpp>
+//#include <opencv2/highgui.hpp>
 // Include GLFW
 #include <GLFW/glfw3.h>
 //#include <SOIL2/SOIL2.h>
@@ -20,7 +20,7 @@
 
 using namespace std;
 
-/** void loadTexture(const char *texImagePath, GLuint& imageTexture1)
+void loadTexture(const char *texImagePath, GLuint& imageTexture1)
 {
     cv::Mat image = cv::imread(texImagePath);
 
@@ -39,7 +39,8 @@ using namespace std;
       //~ glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
       //~ glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
     //RGB
-      cv::cvtColor(image, image, CV_BGR2RGB);
+    if (CV_VERSION_MAJOR >= 4) cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
+    else printf("Su versión de OpenGL es menor a 4, por favor cambie cv::COLOR_BGR2RGB por CV_BGR2RGB en utils.h");
 
       glTexImage2D(GL_TEXTURE_2D,         // Type of texture
                      	0,                   // Pyramid level (for mip-mapping) - 0 is the top level
@@ -63,7 +64,7 @@ string readShaderFile(const char *filePath) {
 	}
 	fileStream.close();
 	return content;
-}**/
+}
 
 bool checkOpenGLError() {
 	bool foundError = false;

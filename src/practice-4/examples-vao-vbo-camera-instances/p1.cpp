@@ -78,10 +78,8 @@ void display(GLFWwindow *window, double currentTime) {
 	aspect = (float) width / (float) height;
 	pMat = glm::perspective(1.0472f, aspect, 0.1f, 1000.0f); // 1.0472 radians == 60 degrees
     // field of view (radians), aspect ratio, near plane, far plane
-	vMat = glm::translate(glm::mat4(1.0f),
-			glm::vec3(-cameraX, -cameraY, -cameraZ));
-	mMat = glm::translate(glm::mat4(1.0f),
-			glm::vec3(cubeLocX, cubeLocY, cubeLocZ));
+	vMat = glm::translate(glm::mat4(1.0f), glm::vec3(-cameraX, -cameraY, -cameraZ));
+	mMat = glm::translate(glm::mat4(1.0f), glm::vec3(cubeLocX, cubeLocY, cubeLocZ));
 	mvMat = vMat * mMat;
 
 	glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvMat));
@@ -92,7 +90,7 @@ void display(GLFWwindow *window, double currentTime) {
 	glEnableVertexAttribArray(0);  // enable the 0th VERTEX ATTRIBUTE
 
 	glEnable(GL_DEPTH_TEST);//haga el test de profundidad para filtrar el color del pixel que va pintarse
-	glDepthFunc(GL_LEQUAL);//se pinta el menos o igual(LEQUAL) de profundidad
+	glDepthFunc(GL_LEQUAL);//se pinta el menos(less) o igual(equal) (LEQUAL) de profundidad
 
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 }

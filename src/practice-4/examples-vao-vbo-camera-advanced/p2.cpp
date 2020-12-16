@@ -167,7 +167,7 @@ void display(GLFWwindow *window, double currentTime) {
 	mvStack.pop();
 	mvStack.pop();
 	mvStack.pop();
-	mvStack.pop();
+	mvStack.pop(); //Vaciamos el stack, para en el siguiente frame volver a realizar el llenado matriz por matriz
 }
 
 //void window_size_callback(GLFWwindow* win, int newWidth, int newHeight) {
@@ -184,7 +184,7 @@ int main(void) {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // I don't know what this does
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);     // and neither this
-	GLFWwindow *window = glfwCreateWindow(600, 600, "Chapter4 - program3", NULL,
+	GLFWwindow *window = glfwCreateWindow(700,700, "Chapter4 - program3", NULL,
 			NULL);
 	glfwMakeContextCurrent(window);
 	if (glewInit() != GLEW_OK) {

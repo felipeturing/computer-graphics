@@ -58,7 +58,7 @@ void setupVertices(void) {
 
 void init(GLFWwindow* window) {
 	renderingProgram = createShaderProgram("vshader6.glsl", "fshader6.glsl");
-	cameraX = 0.0f; cameraY = 0.0f; cameraZ = 4.0f;
+	cameraX = 0.0f; cameraY = 0.0f; cameraZ = 10.0f;
 	pyrLocX = 0.0f; pyrLocY = 2.0f; pyrLocZ = 0.0f;
 	setupVertices();
 
