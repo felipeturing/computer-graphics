@@ -49,7 +49,7 @@ Qt :
 2. Compilar :
 
 OpenGL :
-    g++ [file] -lGL -std=c++11 -Wall -lGL -lGLU -lglut -lGLEW -lglfw -lX11 -lXxf86vm -lXrandr -lpthread -lXi -ldl -lXinerama -lXcursor
+    g++ [filesource] -lGL -std=c++11 -Wall -lGL -lGLU -lglut -lGLEW -lglfw -lX11 -lXxf86vm -lXrandr -lpthread -lXi -ldl -lXinerama -lXcursor
 
 OpenGl && OpenCV (work with textures):
-    g++ p2.cpp -lGL -std=c++11 -Wall `pkg-config --cflags --libs opencv` -lGL -lGLU -lglut -lGLEW -lglfw -lX11 -lXxf86vm -lXrandr -lpthread -lXi -ldl -lXinerama -lXcursor
+    g++ [filesource] -lGL -std=c++11 -Wall `pkg-config --cflags --libs opencv` -lGL -lGLU -lglut -lGLEW -lglfw -lX11 -lXxf86vm -lXrandr -lpthread -lXi -ldl -lXinerama -lXcursor

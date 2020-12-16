@@ -44,7 +44,7 @@ void setupVertices(void) {
 		0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f,
 		0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f,
 		1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f
-	};
+	}; // textureCoordinates se va asociar con pyramidPositions one to one, en base a la primitiva que se va usar.
 	glGenVertexArrays(1, vao);
 	glBindVertexArray(vao[0]);
 	glGenBuffers(numVBOs, vbo);
@@ -58,8 +58,8 @@ void setupVertices(void) {
 
 void init(GLFWwindow* window) {
 	renderingProgram = createShaderProgram("vshader6.glsl", "fshader6.glsl");
-	cameraX = 0.0f; cameraY = 0.0f; cameraZ = 10.0f;
-	pyrLocX = 0.0f; pyrLocY = 2.0f; pyrLocZ = 0.0f;
+	cameraX = 0.0f; cameraY = 0.0f; cameraZ = 4.0f;
+	pyrLocX = 0.0f; pyrLocY = 0.0f; pyrLocZ = 0.0f;
 	setupVertices();
 
 	glfwGetFramebufferSize(window, &width, &height);
