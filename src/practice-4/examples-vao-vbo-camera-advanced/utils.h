@@ -32,12 +32,18 @@ void loadTexture(const char *texImagePath, GLuint& imageTexture1)
       glGenTextures(1, &imageTexture1);
       glBindTexture(GL_TEXTURE_2D, imageTexture1);
 
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        //when uses minification
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // se está usando la distancia de manhattan para escoger el texel más cercano a la coordenada seleccionada en el proceso de rasterización.
 
+        // when uses minification with more resolution
+        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+
+      //when uses maxification
+      //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         // Set texture clamping method
-      //~ glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-      //~ glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+       //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+       //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
     //RGB
     if (CV_VERSION_MAJOR >= 4) cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
     else printf("Su versión de OpenGL < 4, por favor cambie cv::COLOR_BGR2RGB por CV_BGR2RGB en utils.h:42");
@@ -52,6 +58,7 @@ void loadTexture(const char *texImagePath, GLuint& imageTexture1)
 			            GL_UNSIGNED_BYTE,    // Image data type
 			            image.ptr());        // The actual image data itself
 	}
+    //glGenerateMipmap(GL_TEXTURE_2D);
 }
 
 string readShaderFile(const char *filePath) {
