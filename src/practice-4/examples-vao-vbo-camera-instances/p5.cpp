@@ -14,7 +14,7 @@
 #include <GLFW/glfw3.h>
 
 #include <string>
-#include "Utils.h"
+#include "utils.h"
 
 #define numVAOs 1
 #define numVBOs 2
@@ -57,10 +57,10 @@ void setupVertices(void) {
 }
 
 void init(GLFWwindow *window) {
-	renderingProgram = createShaderProgram("vshader4.glsl", "fshader4.glsl");
+	renderingProgram = createShaderProgram("vshader3.glsl", "fshader3.glsl");
 	cameraX = 0.0f;
 	cameraY = 0.0f;
-	cameraZ = 460.0f; //**
+	cameraZ = 50.0f; //**
 	cubeLocX = 0.0f;
 	cubeLocY = -2.0f;
 	cubeLocZ = 0.0f;
@@ -97,7 +97,7 @@ void display(GLFWwindow *window, double currentTime) {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 
-	glDrawArraysInstanced(GL_TRIANGLES, 0, 36, 100000);
+	glDrawArraysInstanced(GL_TRIANGLES, 0, 36, 100);
 }
 
 int main(void) {

@@ -31,7 +31,7 @@ OpenCV :
     cd ~
 
     //Step 5. Check OpenCV version installed
-    $ pkg-config --modversion opencv
+    pkg-config --modversion opencv
 
     Reference : http://techawarey.com/programming/install-opencv-c-c-in-ubuntu-18-04-lts-step-by-step-guide/
 

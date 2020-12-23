@@ -8,6 +8,7 @@ uniform mat4 mv_matrix;
 uniform mat4 proj_matrix;
 
 void main(void) {
-    color = vec4(0,0,1,1);
-        //~ color = varyingColor;
+//    color = vec4(0,0,1,1);
+
+  color = varyingColor;
 }
