@@ -16,7 +16,7 @@ using namespace std;
 #define numVAOs 1
 #define numVBOs 4
 
-float cameraX, cameraY, cameraZ;
+float cameraX, cameraY, cameraZ, earthX, earthY, earthZ;
 GLuint renderingProgram;
 GLuint vao[numVAOs];
 GLuint vbo[numVBOs];
@@ -75,12 +75,13 @@ void setupVertices(void) {
 void init(GLFWwindow* window) {
 	renderingProgram = createShaderProgram("vs.glsl", "fs.glsl");
     //renderingProgram = Utils::createShaderProgram("vs.glsl","fs.glsl");
-	cameraX = 0.0f; cameraY = 0.0f; cameraZ = 15.0f;
+	cameraX = 0.0f; cameraY = 12.0f; cameraZ =0.0f;
+    earthX = 0.0f; earthY = 0.0f; earthZ = 0.0f;
 
 	glfwGetFramebufferSize(window, &width, &height);
 	aspect = (float)width / (float)height;
 	pMat = glm::perspective(1.0472f, aspect, 0.1f, 1000.0f);
-
+    pMat = glm::rotate(pMat, 1.57f ,glm::vec3(1.0,0.0,0.0)); // rotar la camara para una vista de la parte superior de la escena
 	setupVertices();
 	//earthTexture = Utils::loadTexture("earth.jpg");
     loadTexture("earth.jpg", brickTexture);
@@ -102,58 +103,51 @@ void display(GLFWwindow* window, double currentTime) {
     vMat = glm::translate(glm::mat4(1.0f), glm::vec3(-cameraX, -cameraY, -cameraZ));
     mvStack.push(vMat);
     // tierra
-        mvStack.push(mvStack.top());
-	    mvStack.top() *= glm::translate(glm::mat4(1.0f), glm::vec3(0.0, 0.0, 0.0));
-        mvStack.push(mvStack.top());
-        mvStack.top() *= glm::rotate(glm::mat4(1.0f), 0.2f*(float)currentTime, glm::vec3(0.0f, 1.0f, 0.0f));
-	    glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvStack.top()));
-	    glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-	    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	    glEnableVertexAttribArray(0);
-	    glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-	    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
-	    glEnableVertexAttribArray(1);
-	    glActiveTexture(GL_TEXTURE0);
-	    glBindTexture(GL_TEXTURE_2D, brickTexture);
-	    glEnable(GL_CULL_FACE);
-	    glFrontFace(GL_CCW);
-        glEnable(GL_DEPTH_TEST);
-	    glDepthFunc(GL_LEQUAL);
-	    glDrawArrays(GL_TRIANGLES, 0, mySphere.getNumIndices());
-
-        mvStack.pop();
-        //mvStack.pop();
-        //mvStack.pop();
+    mvStack.push(mvStack.top());
+    mvStack.top() *= glm::translate(glm::mat4(1.0f), glm::vec3(earthX, earthY, earthZ));
+    mvStack.push(mvStack.top());
+    mvStack.top() *= glm::rotate(glm::mat4(1.0f), 0.2f*(float)currentTime, glm::vec3(0.0f, 1.0f, 0.0f));
+    glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvStack.top()));
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(1);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, brickTexture);
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CCW);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    glDrawArrays(GL_TRIANGLES, 0, mySphere.getNumIndices());
+    mvStack.pop();
 
     // esfera que cae en espiral a la tierra
-        mvStack.push(mvStack.top());  // mvMat of sun
-        //mvStack.top() *= glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, .0f, 0.0f));  // sun position
-        mvStack.top() *= glm::scale(glm::mat4(1.0f), glm::vec3(1.0f/((float)currentTime*0.09+1.0), 1.0f/((float)currentTime*0.09+1.0), 1.0f/((float)currentTime*0.09+1.0)));
-	    //mvStack.top() *= glm::translate(glm::mat4(1.0f),
-			//glm::vec3(sin((float) currentTime)*((float) currentTime)*0.1 * 4.0, 0.0f,
-				//	cos((float) currentTime) *((float) currentTime)*0.1* 4.0));
+    mvStack.push(mvStack.top());
+    mvStack.top() *= glm::scale(glm::mat4(1.0f), glm::vec3(1.0f/((float)currentTime*0.09+1.0), 1.0f/((float)currentTime*0.09+1.0), 1.0f/((float)currentTime*0.09+1.0)));
+    mvStack.top() *= glm::translate(glm::mat4(1.0f),
+		glm::vec3(sin((float) currentTime*3.0) * (10.0 /(((float) currentTime*0.05+1.0) )) , 0.0f,
+				cos((float) currentTime*3.0)* (10.0 /(((float) currentTime*0.05+1.0) ))));
 
-        mvStack.top() *= glm::translate(glm::mat4(1.0f),
-			glm::vec3(sin((float) currentTime*3.0) * (10.0 /(((float) currentTime*0.05+1.0) )) , 0.0f,
-					cos((float) currentTime*3.0)* (10.0 /(((float) currentTime*0.05+1.0) ))));
+    glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvStack.top()));
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[3]);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(1);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, brick2Texture);
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CCW);
+    //glEnable(GL_DEPTH_TEST);
+    //glDepthFunc(GL_LEQUAL);
+    glDrawArrays(GL_TRIANGLES, 0, mySphere.getNumIndices());
 
-	    glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvStack.top()));
-	    glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-	    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	    glEnableVertexAttribArray(0);
-	    glBindBuffer(GL_ARRAY_BUFFER, vbo[3]);
-	    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
-	    glEnableVertexAttribArray(1);
-	    glActiveTexture(GL_TEXTURE0);
-	    glBindTexture(GL_TEXTURE_2D, brick2Texture);
-	    glEnable(GL_CULL_FACE);
-	    glFrontFace(GL_CCW);
-        //glEnable(GL_DEPTH_TEST);
-	    //glDepthFunc(GL_LEQUAL);
-	    glDrawArrays(GL_TRIANGLES, 0, mySphere.getNumIndices());
-
-        mvStack.pop();
-        mvStack.pop();
+    mvStack.pop();
+    mvStack.pop();
+    mvStack.pop();
 
 }
 

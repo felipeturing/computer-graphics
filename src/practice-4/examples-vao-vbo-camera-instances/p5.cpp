@@ -1,18 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
-
-// Include GLEW
 #define GLEW_STATIC
 #include <GL/glew.h>
 #include <cmath>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
-// Include GLFW
 #include <GLFW/glfw3.h>
-
 #include <string>
 #include "utils.h"
 
@@ -21,12 +16,9 @@
 
 float cameraX, cameraY, cameraZ;
 float cubeLocX, cubeLocY, cubeLocZ;
-
 GLuint renderingProgram;
 GLuint vao[numVAOs];
 GLuint vbo[numVBOs];
-
-// variable allocation for display
 GLuint vLoc, tfLoc, projLoc;
 int width, height, displayLoopi;
 float aspect;
@@ -52,8 +44,7 @@ void setupVertices(void) {
 	glGenBuffers(numVBOs, vbo);  // creates VBO and returns the integer ID
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPositions), vertexPositions,
-			GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPositions), vertexPositions,GL_STATIC_DRAW);
 }
 
 void init(GLFWwindow *window) {
@@ -77,8 +68,7 @@ void display(GLFWwindow *window, double currentTime) {
 
 	glUseProgram(renderingProgram);
 
-	vMat = glm::translate(glm::mat4(1.0f),
-			glm::vec3(-cameraX, -cameraY, -cameraZ));
+	vMat = glm::translate(glm::mat4(1.0f),glm::vec3(-cameraX, -cameraY, -cameraZ));
 
 	vLoc = glGetUniformLocation(renderingProgram, "v_matrix");
 	projLoc = glGetUniformLocation(renderingProgram, "proj_matrix");
@@ -93,10 +83,8 @@ void display(GLFWwindow *window, double currentTime) {
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 	glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
 	glEnableVertexAttribArray(0);
-
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
-
 	glDrawArraysInstanced(GL_TRIANGLES, 0, 36, 100);
 }
 
@@ -104,9 +92,9 @@ int main(void) {
     if (!glfwInit()) {exit(EXIT_FAILURE);}
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // I don't know what this does
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // and neither this
-    GLFWwindow* window = glfwCreateWindow(600, 600, "CUBO 1", NULL, NULL);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    GLFWwindow* window = glfwCreateWindow(600, 600, "Cylinder", NULL, NULL);
     glfwMakeContextCurrent(window);
     if (glewInit() != GLEW_OK) {exit(EXIT_FAILURE);}
     glfwSwapInterval(1);
