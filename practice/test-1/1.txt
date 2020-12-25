@@ -1,0 +1,17 @@
+a)
+La computación gráfica es una rama de las ciencias de la computación que se encarga de leer y/o generar una cantidad
+de puntos (de una fuente, por ejemplo texto plano, crudo, imagen, etc) o modelando matematicamente (con funciones), para luego procesarlos(color, tamaño, animacion, etc) a traves del pipeline, teniendo al final pixeles sobre la pantalla.
+    Aplicaciones de la computación gráfica :
+        1. Los juegos.
+        2. Análisis de fractales graficamente.
+        3. Diseño industrial, por ejemplo autocad.
+
+
+b)
+
+La diferencia esta en que la computacion grafica puede generar figuras, formas, superficies, solidos, en base por ejemplo
+a una funcion matematica y el procesamiento de imagene solo mejora calidad, filtros, etc de la imagen leída.
+
+c)
+La diferencia radica en que el vertexshader en que este ultimo puede modificar los atributos de cada vertice, principalmente su posicion en la pantalla.
+por otro lado el fragmetshader se encarga del como se ven los pixeles y de extrapolarlos en base a una primitiva para rellenar una triangulo (3 vertices) por ejemplo y asignarle un color.

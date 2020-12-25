@@ -1,0 +1,29 @@
+# 3ds Max Wavefront OBJ Exporter v0.97b - (c)2007 guruware
+# File Created: 07.12.2010 08:24:29
+
+newmtl texthaz
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.1350 0.1350 0.1350
+	Ke 0.0000 0.0000 0.0000
+	map_Ka C:\Users\scutamil\Documents\3dsmax\scenes\greek_house\publish\javitott\publishmappa\text.tga
+	map_Kd C:\Users\scutamil\Documents\3dsmax\scenes\greek_house\publish\javitott\publishmappa\text.tga
+	map_bump Map__16_Normal_Bump.tga
+
+newmtl Material__106
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.8745 0.8745 0.8745
+	Kd 0.8745 0.8745 0.8745
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
