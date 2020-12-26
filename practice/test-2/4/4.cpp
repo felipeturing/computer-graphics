@@ -149,7 +149,6 @@ void display(GLFWwindow* window, double currentTime) {
 	//glEnable(GL_DEPTH_TEST);
 	//glDepthFunc(GL_LEQUAL);
 	glDrawArrays(GL_TRIANGLES, 0, Car.getNumVertices());
-
 }
 
 void window_size_callback(GLFWwindow* win, int newWidth, int newHeight) {

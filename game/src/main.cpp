@@ -10,45 +10,226 @@
 #include "ImportedModel.h"
 #include "utils.h"
 using namespace std;
-#define numVAOs 1
-#define numVBOs 6
 
-float cameraX, cameraY, cameraZ, CottageLocX, CottageLocY, CottageLocZ,HouseLocX,HouseLocY,HouseLocZ, aspect, closeto = 0.005f;
-GLuint renderingProgram, vao[numVAOs], vbo[numVBOs], mvLoc, projLoc, obj, rockTexture, houseTexture;
-int width, height;
+//VAOs and VBOs
+#define numVAOs 1
+#define numVBOs 8
+
+// global variables
+float cameraX, cameraY, cameraZ, RockLocX, RockLocY, RockLocZ,HouseLocX,HouseLocY,HouseLocZ, FlatLocX, FlatLocY, FlatLocZ, aspect, closeto = 3.0f, angleCamera, angleCameraInc = 0.001f;
+GLuint renderingProgram, vao[numVAOs], vbo[numVBOs], mvLoc, projLoc, obj, rockTexture, houseTexture, flatTexture;
+int width, height, keyboard, actionKeyboard;
 glm::mat4 pMat, vMat, mMat, mvMat;
 
-ImportedModel Cottage("../models/Rock_big_single_b_LOD0.obj");
+
+
+// models
+ImportedModel Rock("../models/Rock_big_single_b_LOD0.obj");
 ImportedModel House("../models/house.obj");
 
-float toRadians(float degrees) { return (degrees * 2.0f * 3.14159f) / 360.0f; }
+
+// auxiliars and callbacks function headers
+void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
+void windowSizeCallback(GLFWwindow* win, int newWidth, int newHeight);
+float toRadians(float degrees);
+void setupVertices(void);
+void sceneViewNavigation(void);
+
+
+void init(GLFWwindow* window) {
+    renderingProgram = createShaderProgram("shaders/vs.glsl", "shaders/fs.glsl");
+//	cameraX = 0.0f; cameraY = 0.0f; cameraZ = 200.0f; //posicion inicial viendo frontalmente la escena
+    cameraX = 0.0f; cameraY = 20.0f; cameraZ = 500.0f;
+    angleCamera = 0.5f;
+	RockLocX = -200.0f; RockLocY = 0.5f; RockLocZ = 0.0f;
+    HouseLocX = 50.0f; HouseLocY = 65.0f; HouseLocZ = 0.0f;
+    FlatLocX = 0.0f; FlatLocY = 0.0f; FlatLocZ = 0.0f;
+	glfwGetFramebufferSize(window, &width, &height);
+	aspect = (float)width / (float)height;
+	pMat = glm::perspective(1.0472f, aspect, 0.1f, 10000.0f);
+    pMat = glm::rotate(pMat, angleCamera ,glm::vec3(1.0,0.0,0.0));
+	setupVertices();
+
+    loadTexture("../textures/Rock_big_single_b_diffuse_desert.jpg", rockTexture);
+    loadTexture("../textures/house/house_diffuse.jpg", houseTexture);
+    loadTexture("../textures/Rock_big_single_b_sandstone_flat.jpg", flatTexture);
+
+}
+void display(GLFWwindow* window, double currentTime) {
+	glClear(GL_DEPTH_BUFFER_BIT);
+	glClearColor(1.0, 1.0, 1.0, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glUseProgram(renderingProgram);
+
+	mvLoc = glGetUniformLocation(renderingProgram, "mv_matrix");
+	projLoc = glGetUniformLocation(renderingProgram, "proj_matrix");
+    obj = glGetUniformLocation(renderingProgram, "obj");
+
+    sceneViewNavigation();
+
+	vMat = glm::translate(glm::mat4(1.0f), glm::vec3(-cameraX, -cameraY, -cameraZ));
+    //vMat = glm::rotate(vMat, angleCamera,glm::vec3(1.0,1.0,1.0));
+
+
+	mMat = glm::translate(glm::mat4(1.0f), glm::vec3(RockLocX, RockLocY, RockLocZ));
+    mMat = glm::scale(mMat,glm::vec3(0.5,0.5,0.5));
+	mvMat = vMat * mMat;
+    glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvMat));
+	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
+    glUniform1i(obj,1);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(1);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, rockTexture);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+	glDrawArraysInstanced(GL_TRIANGLES, 0, Rock.getNumVertices(), 10);
+
+    mMat = glm::translate(glm::mat4(1.0f), glm::vec3(HouseLocX, HouseLocY, HouseLocZ));
+    mMat = glm::rotate(mMat, 2.5f, glm::vec3(0.0,1.0,0.0));
+    mMat = glm::scale(mMat,glm::vec3(2.0,2.0,2.0));
+	mvMat = vMat * mMat;
+    glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvMat));
+	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
+    glUniform1i(obj,2);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[3]);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[4]);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(1);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, houseTexture);
+	//glEnable(GL_DEPTH_TEST);
+	//glDepthFunc(GL_LEQUAL);
+	glDrawArrays(GL_TRIANGLES, 0, House.getNumVertices());
+
+    mMat = glm::translate(glm::mat4(1.0f), glm::vec3(FlatLocX, FlatLocY, FlatLocZ));
+	mvMat = vMat * mMat;
+    glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvMat));
+	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
+    glUniform1i(obj,3);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[6]);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[7]);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(1);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, flatTexture);
+	//glEnable(GL_DEPTH_TEST);
+	//glDepthFunc(GL_LEQUAL);
+	glDrawArrays(GL_TRIANGLES, 0, House.getNumVertices());
+
+}
+
+int main(void) {
+	if (!glfwInit()) { exit(EXIT_FAILURE); }
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+
+    GLFWwindow *window;
+	window = glfwCreateWindow(1200, 700, "Game", NULL, NULL);
+
+    //set keyboard callback
+    glfwSetKeyCallback(window, keyCallback);
+    glfwSetInputMode(window, GLFW_STICKY_KEYS, 1);
+	glfwMakeContextCurrent(window);
+
+	if (glewInit() != GLEW_OK) { exit(EXIT_FAILURE); }
+	glfwSwapInterval(1);
+	glfwSetWindowSizeCallback(window, windowSizeCallback);
+	init(window);
+	while (!glfwWindowShouldClose(window)) {
+		display(window, glfwGetTime());
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	}
+	glfwDestroyWindow(window);
+	glfwTerminate();
+	exit(EXIT_SUCCESS);
+}
+
+void sceneViewNavigation(void){
+    if (keyboard == 87 && (actionKeyboard==GLFW_PRESS || actionKeyboard == GLFW_REPEAT) ){ //W
+        cameraZ -= closeto;
+    }else if (keyboard == 83 && (actionKeyboard==GLFW_PRESS || actionKeyboard == GLFW_REPEAT)){ //S
+        cameraZ += closeto;
+    }else if (keyboard == 65 && (actionKeyboard==GLFW_PRESS || actionKeyboard == GLFW_REPEAT)){ //S
+        cameraX -= closeto;
+    }else if (keyboard == 68 && (actionKeyboard==GLFW_PRESS || actionKeyboard == GLFW_REPEAT)){ //S
+        cameraX += closeto;
+    }else if (keyboard == 265 && (actionKeyboard==GLFW_PRESS || actionKeyboard == GLFW_REPEAT)){ //UP
+        //angleCamera += angleCameraInc;
+        cameraY += closeto;
+    }else if (keyboard == 264 && (actionKeyboard==GLFW_PRESS || actionKeyboard == GLFW_REPEAT)){ //DOWN
+        //angleCamera -= angleCameraInc;
+        cameraY -= closeto;
+    }
+}
+
+void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods){
+    /**if(key ==GLFW_KEY_SPACE){
+        switch (action){
+            case GLFW_PRESS:
+                std::cout<< "Space key is pressed" << std::endl;
+                break;
+            case GLFW_REPEAT:
+                std::cout<<"Space key is being held down"<< std::endl;
+                break;
+            case GLFW_RELEASE:
+                std::cout<<"Space key has been released"<<std::endl;
+                break;
+            default:
+                break;
+        }
+    }**/
+    keyboard = key;
+    actionKeyboard = action;
+//    std::cout<<key<<std::endl;
+}
+
+float toRadians(float degrees) {
+    return (degrees * 2.0f * 3.14159f) / 360.0f;
+}
+
+void windowSizeCallback(GLFWwindow* win, int newWidth, int newHeight) {
+	aspect = (float)newWidth / (float)newHeight;
+	glViewport(0, 0, newWidth, newHeight);
+	pMat = glm::perspective(1.0472f, aspect, 0.1f, 1000.0f);
+}
+
 void setupVertices(void) {
     glGenVertexArrays(1, vao);
 	glBindVertexArray(vao[0]);
 	glGenBuffers(numVBOs, vbo);
     // Rocks
- 	std::vector<glm::vec3> vertCottage = Cottage.getVertices();
-    std::vector<glm::vec2> texCottage = Cottage.getTextureCoords();
-	std::vector<glm::vec3> normCottage = Cottage.getNormals();
-    std::vector<float> pvaluesCottage;
-    std::vector<float> tvaluesCottage;
-	std::vector<float> nvaluesCottage;
-    for (int i = 0; i < Cottage.getNumVertices(); i++) {
-		pvaluesCottage.push_back((vertCottage[i]).x);
-		pvaluesCottage.push_back((vertCottage[i]).y);
-		pvaluesCottage.push_back((vertCottage[i]).z);
-        tvaluesCottage.push_back((texCottage[i]).s);
-		tvaluesCottage.push_back((texCottage[i]).t);
-		nvaluesCottage.push_back((normCottage[i]).x);
-		nvaluesCottage.push_back((normCottage[i]).y);
-		nvaluesCottage.push_back((normCottage[i]).z);
+ 	std::vector<glm::vec3> vertRock = Rock.getVertices();
+    std::vector<glm::vec2> texRock = Rock.getTextureCoords();
+	std::vector<glm::vec3> normRock = Rock.getNormals();
+    std::vector<float> pvaluesRock;
+    std::vector<float> tvaluesRock;
+	std::vector<float> nvaluesRock;
+    for (int i = 0; i < Rock.getNumVertices(); i++) {
+		pvaluesRock.push_back((vertRock[i]).x);
+		pvaluesRock.push_back((vertRock[i]).y);
+		pvaluesRock.push_back((vertRock[i]).z);
+        tvaluesRock.push_back((texRock[i]).s);
+		tvaluesRock.push_back((texRock[i]).t);
+		nvaluesRock.push_back((normRock[i]).x);
+		nvaluesRock.push_back((normRock[i]).y);
+		nvaluesRock.push_back((normRock[i]).z);
 	}
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-	glBufferData(GL_ARRAY_BUFFER, pvaluesCottage.size() * 4, &pvaluesCottage[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, pvaluesRock.size() * 4, &pvaluesRock[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-	glBufferData(GL_ARRAY_BUFFER, tvaluesCottage.size()*4, &tvaluesCottage[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, tvaluesRock.size()*4, &tvaluesRock[0], GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[2]);
-	glBufferData(GL_ARRAY_BUFFER, nvaluesCottage.size() * 4, &nvaluesCottage[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, nvaluesRock.size() * 4, &nvaluesRock[0], GL_STATIC_DRAW);
 
     //House
     std::vector<glm::vec3> vertHouse = House.getVertices();
@@ -73,95 +254,20 @@ void setupVertices(void) {
 	glBufferData(GL_ARRAY_BUFFER, tvaluesHouse.size()*4, &tvaluesHouse[0], GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[5]);
 	glBufferData(GL_ARRAY_BUFFER, nvaluesHouse.size() * 4, &nvaluesHouse[0], GL_STATIC_DRAW);
-}
 
-void init(GLFWwindow* window) {
-    renderingProgram = createShaderProgram("shaders/vs.glsl", "shaders/fs.glsl");
-//	cameraX = 0.0f; cameraY = 0.0f; cameraZ = 200.0f; //posicion inicial viendo frontalmente la escena
-    cameraX = 0.0f; cameraY = 100.0f; cameraZ = 200.0f;
-	CottageLocX = -50.0f; CottageLocY = -20.0f; CottageLocZ = 0.0f;
-    HouseLocX = 50.0f; HouseLocY = 0.0f; HouseLocZ = 0.0f;
-	glfwGetFramebufferSize(window, &width, &height);
-	aspect = (float)width / (float)height;
-	pMat = glm::perspective(1.0472f, aspect, 0.1f, 10000.0f);
-    pMat = glm::rotate(pMat, 0.5f ,glm::vec3(1.0,0.0,0.0));
-	setupVertices();
-    loadTexture("../textures/Rock_big_single_b_diffuse_desert.jpg", rockTexture);
-    loadTexture("../textures/house/house_diffuse.jpg", houseTexture);
-}
-void display(GLFWwindow* window, double currentTime) {
-	glClear(GL_DEPTH_BUFFER_BIT);
-	glClearColor(1.0, 1.0, 1.0, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT);
-	glUseProgram(renderingProgram);
+    //Plane
+    float side= 800.0f,levelY=0.0f; // lado y pos en el eje y
+    float posSide = (float)side/2.0f;
+    float flatPositions[18] = // 2 triangles * 3 vertex * 3 floats = 18 floats
+	{ -posSide, levelY, posSide, -posSide, levelY, -posSide, posSide, levelY, posSide,
+      posSide, levelY, posSide, posSide, levelY, -posSide, -posSide, levelY, -posSide};
 
-	mvLoc = glGetUniformLocation(renderingProgram, "mv_matrix");
-	projLoc = glGetUniformLocation(renderingProgram, "proj_matrix");
-    obj = glGetUniformLocation(renderingProgram, "obj");
-    closeto += 0.005;
-    cameraX = 0.0f; cameraY = 100.0/((float)(closeto*0.01+1)); cameraZ = 500.0/((float)(closeto+1));
+	float textureFlatCoordinates[12] =
+	{ 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f,
+      1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f};
 
-	vMat = glm::translate(glm::mat4(1.0f), glm::vec3(-cameraX, -cameraY, -cameraZ));
-
-	mMat = glm::translate(glm::mat4(1.0f), glm::vec3(CottageLocX, CottageLocY, CottageLocZ));
-    mMat = glm::scale(mMat,glm::vec3(0.5,0.5,0.5));
-	mvMat = vMat * mMat;
-    glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvMat));
-	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
-    glUniform1i(obj,1);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(1);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, rockTexture);
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);
-	glDrawArraysInstanced(GL_TRIANGLES, 0, Cottage.getNumVertices(), 10);
-
-    mMat = glm::translate(glm::mat4(1.0f), glm::vec3(HouseLocX, HouseLocY, HouseLocZ));
-    mMat = glm::rotate(mMat, 2.5f, glm::vec3(0.0,1.0,0.0));
-	mvMat = vMat * mMat;
-    glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvMat));
-	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
-    glUniform1i(obj,2);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[3]);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[4]);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(1);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, houseTexture);
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);
-	glDrawArrays(GL_TRIANGLES, 0, House.getNumVertices());
-}
-
-void window_size_callback(GLFWwindow* win, int newWidth, int newHeight) {
-	aspect = (float)newWidth / (float)newHeight;
-	glViewport(0, 0, newWidth, newHeight);
-	pMat = glm::perspective(1.0472f, aspect, 0.1f, 1000.0f);
-}
-
-int main(void) {
-	if (!glfwInit()) { exit(EXIT_FAILURE); }
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	GLFWwindow* window = glfwCreateWindow(600, 600, "Game - Felipe T.", NULL, NULL);
-	glfwMakeContextCurrent(window);
-	if (glewInit() != GLEW_OK) { exit(EXIT_FAILURE); }
-	glfwSwapInterval(1);
-	glfwSetWindowSizeCallback(window, window_size_callback);
-	init(window);
-	while (!glfwWindowShouldClose(window)) {
-		display(window, glfwGetTime());
-		glfwSwapBuffers(window);
-		glfwPollEvents();
-	}
-	glfwDestroyWindow(window);
-	glfwTerminate();
-	exit(EXIT_SUCCESS);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[6]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(flatPositions), flatPositions, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[7]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(textureFlatCoordinates),textureFlatCoordinates, GL_STATIC_DRAW);
 }
