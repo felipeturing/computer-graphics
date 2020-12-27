@@ -13,20 +13,20 @@ using namespace std;
 
 //VAOs and VBOs
 #define numVAOs 1
-#define numVBOs 8
+#define numVBOs 15
 
 // global variables
-float cameraX, cameraY, cameraZ, RockLocX, RockLocY, RockLocZ,HouseLocX,HouseLocY,HouseLocZ, FlatLocX, FlatLocY, FlatLocZ, aspect, closeto = 3.0f, angleCamera, angleCameraInc = 0.001f;
-GLuint renderingProgram, vao[numVAOs], vbo[numVBOs], mvLoc, projLoc, obj, rockTexture, houseTexture, flatTexture;
+float cameraX, cameraY, cameraZ, RockLocX, RockLocY, RockLocZ,HouseLocX,HouseLocY,HouseLocZ, FlatLocX, FlatLocY, FlatLocZ, aspect,mountainLocX,mountainLocY,mountainLocZ,houseNavLocX,houseNavLocY,houseNavLocZ,  closeto = 3.0f, angleCamera, angleCameraInc = 0.001f;
+GLuint renderingProgram, vao[numVAOs], vbo[numVBOs], mvLoc, projLoc, obj, rockTexture, houseTexture, flatTexture,houseNavTexture, mountainTexture;
 int width, height, keyboard, actionKeyboard;
 glm::mat4 pMat, vMat, mMat, mvMat;
-
 
 
 // models
 ImportedModel Rock("../models/Rock_big_single_b_LOD0.obj");
 ImportedModel House("../models/house.obj");
-
+ImportedModel Mountain("../models/mountain/Mountain.obj");
+//ImportedModel HouseNav("../models/house-navigation/3d-model.obj");
 
 // auxiliars and callbacks function headers
 void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
@@ -44,6 +44,8 @@ void init(GLFWwindow* window) {
 	RockLocX = -200.0f; RockLocY = 0.5f; RockLocZ = 0.0f;
     HouseLocX = 50.0f; HouseLocY = 65.0f; HouseLocZ = 0.0f;
     FlatLocX = 0.0f; FlatLocY = 0.0f; FlatLocZ = 0.0f;
+    mountainLocX = 0.0f; mountainLocY = 0.0f; mountainLocZ = 0.0f;
+    //houseNavLocX = 50.0f; houseNavLocY = 0.0f, houseNavLocZ = 50.0f;
 	glfwGetFramebufferSize(window, &width, &height);
 	aspect = (float)width / (float)height;
 	pMat = glm::perspective(1.0472f, aspect, 0.1f, 10000.0f);
@@ -53,6 +55,8 @@ void init(GLFWwindow* window) {
     loadTexture("../textures/Rock_big_single_b_diffuse_desert.jpg", rockTexture);
     loadTexture("../textures/house/house_diffuse.jpg", houseTexture);
     loadTexture("../textures/Rock_big_single_b_sandstone_flat.jpg", flatTexture);
+    //loadTexture("../textures/Rock_big_single_b_sandstone_flat.jpg", flatTexture);
+    //loadTexture("../textures/mountain/Color.png", mountainTexture);
 
 }
 void display(GLFWwindow* window, double currentTime) {
@@ -68,9 +72,26 @@ void display(GLFWwindow* window, double currentTime) {
     sceneViewNavigation();
 
 	vMat = glm::translate(glm::mat4(1.0f), glm::vec3(-cameraX, -cameraY, -cameraZ));
-    //vMat = glm::rotate(vMat, angleCamera,glm::vec3(1.0,1.0,1.0));
 
+    /*mMat = glm::translate(glm::mat4(1.0f), glm::vec3(mountainLocX, mountainLocY, mountainLocZ));
+    mMat = glm::scale(mMat,glm::vec3(10.0,10.0,10.0));
+	mvMat = vMat * mMat;
+    glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvMat));
+	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
+    glUniform1i(obj,4);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[8]);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[9]);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(1);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, mountainTexture);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+	glDrawArrays(GL_TRIANGLES, 0, Mountain.getNumVertices());*/
 
+    //rocks
 	mMat = glm::translate(glm::mat4(1.0f), glm::vec3(RockLocX, RockLocY, RockLocZ));
     mMat = glm::scale(mMat,glm::vec3(0.5,0.5,0.5));
 	mvMat = vMat * mMat;
@@ -89,6 +110,8 @@ void display(GLFWwindow* window, double currentTime) {
 	glDepthFunc(GL_LEQUAL);
 	glDrawArraysInstanced(GL_TRIANGLES, 0, Rock.getNumVertices(), 10);
 
+
+    //House
     mMat = glm::translate(glm::mat4(1.0f), glm::vec3(HouseLocX, HouseLocY, HouseLocZ));
     mMat = glm::rotate(mMat, 2.5f, glm::vec3(0.0,1.0,0.0));
     mMat = glm::scale(mMat,glm::vec3(2.0,2.0,2.0));
@@ -108,6 +131,8 @@ void display(GLFWwindow* window, double currentTime) {
 	//glDepthFunc(GL_LEQUAL);
 	glDrawArrays(GL_TRIANGLES, 0, House.getNumVertices());
 
+
+    //Flat
     mMat = glm::translate(glm::mat4(1.0f), glm::vec3(FlatLocX, FlatLocY, FlatLocZ));
 	mvMat = vMat * mMat;
     glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvMat));
@@ -255,8 +280,36 @@ void setupVertices(void) {
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[5]);
 	glBufferData(GL_ARRAY_BUFFER, nvaluesHouse.size() * 4, &nvaluesHouse[0], GL_STATIC_DRAW);
 
+    //Mountain lee 1 millón de lineas del obj para la montaña, así que se demora al cargar en mi pc
+    /*std::vector<glm::vec3> vertMountain = Mountain.getVertices();
+    std::vector<glm::vec2> texMountain = Mountain.getTextureCoords();
+	std::vector<glm::vec3> normMountain = Mountain.getNormals();
+    std::vector<float> pvaluesMountain;
+    std::vector<float> tvaluesMountain;
+	std::vector<float> nvaluesMountain;
+    for (int i = 0; i < Mountain.getNumVertices(); i++) {
+		pvaluesMountain.push_back((vertMountain[i]).x);
+		pvaluesMountain.push_back((vertMountain[i]).y);
+		pvaluesMountain.push_back((vertMountain[i]).z);
+        tvaluesMountain.push_back((texMountain[i]).s);
+		tvaluesMountain.push_back((texMountain[i]).t);
+		nvaluesMountain.push_back((normMountain[i]).x);
+		nvaluesMountain.push_back((normMountain[i]).y);
+		nvaluesMountain.push_back((normMountain[i]).z);
+	}
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[8]);
+	glBufferData(GL_ARRAY_BUFFER, pvaluesMountain.size() * 4, &pvaluesMountain[0], GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[9]);
+	glBufferData(GL_ARRAY_BUFFER, tvaluesMountain.size()*4, &tvaluesMountain[0], GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[10]);
+	glBufferData(GL_ARRAY_BUFFER, nvaluesMountain.size() * 4, &nvaluesMountain[0], GL_STATIC_DRAW);*/
+
+
+
+
+
     //Plane
-    float side= 800.0f,levelY=0.0f; // lado y pos en el eje y
+    float side= 2000.0f,levelY=0.0f; // lado y pos en el eje y
     float posSide = (float)side/2.0f;
     float flatPositions[18] = // 2 triangles * 3 vertex * 3 floats = 18 floats
 	{ -posSide, levelY, posSide, -posSide, levelY, -posSide, posSide, levelY, posSide,
