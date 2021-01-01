@@ -45,6 +45,7 @@ void loadTexture(const char *texImagePath, GLuint& imageTexture1)
        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
     //RGB
+
     if (CV_VERSION_MAJOR >= 4) cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
     else printf("Su versión de OpenGL < 4, por favor cambie cv::COLOR_BGR2RGB por CV_BGR2RGB en utils.h:42");
 
@@ -116,7 +117,6 @@ string readShaderSource(const char *filePath) {
     string line = "";
     while (getline(fileStream, line))
         content.append(line + "\n");
-
     fileStream.close();
     return content;
 }
@@ -164,6 +164,5 @@ GLuint createShaderProgram(const char *vshaderfile, const char *fshaderfile) {
         cout << "linking failed" << endl;
         printProgramLog(vfProgram);
     }
-
     return vfProgram;
 }

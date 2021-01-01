@@ -1,25 +1,36 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <iostream>
+#define GLEW_STATIC
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <string>
 #include <iostream>
 #include <fstream>
 #include <cmath>
+#include <stack>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include "ImportedModel.h"
 #include "utils.h"
+#include "ImportedModel.h"
+
 using namespace std;
 
 //VAOs and VBOs
 #define numVAOs 1
-#define numVBOs 15
+#define numVBOs 20
 
 // global variables
-float cameraX, cameraY, cameraZ, RockLocX, RockLocY, RockLocZ,HouseLocX,HouseLocY,HouseLocZ, FlatLocX, FlatLocY, FlatLocZ, aspect,mountainLocX,mountainLocY,mountainLocZ,houseNavLocX,houseNavLocY,houseNavLocZ,  closeto = 3.0f, angleCamera, angleCameraInc = 0.001f;
+float cameraX, cameraY, cameraZ, RockLocX, RockLocY, RockLocZ,HouseLocX,HouseLocY,HouseLocZ, FlatLocX, FlatLocY, FlatLocZ, aspect,mountainLocX,mountainLocY,mountainLocZ,houseNavLocX,houseNavLocY,houseNavLocZ, closeto = 3.0f, angleCamera, angleCameraInc = 0.001f;
+
 GLuint renderingProgram, vao[numVAOs], vbo[numVBOs], mvLoc, projLoc, obj, rockTexture, houseTexture, flatTexture,houseNavTexture, mountainTexture;
+
 int width, height, keyboard, actionKeyboard;
+
 glm::mat4 pMat, vMat, mMat, mvMat;
+glm::vec4 posLeftLeg, posRightLeg, posTrunk;
+stack<glm::mat4> mvStack;
 
 
 // models
@@ -28,27 +39,29 @@ ImportedModel House("../models/house.obj");
 ImportedModel Mountain("../models/mountain/Mountain.obj");
 //ImportedModel HouseNav("../models/house-navigation/3d-model.obj");
 
-// auxiliars and callbacks function headers
+// prototypes
 void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void windowSizeCallback(GLFWwindow* win, int newWidth, int newHeight);
 float toRadians(float degrees);
 void setupVertices(void);
 void sceneViewNavigation(void);
 
-
 void init(GLFWwindow* window) {
     renderingProgram = createShaderProgram("shaders/vs.glsl", "shaders/fs.glsl");
-//	cameraX = 0.0f; cameraY = 0.0f; cameraZ = 200.0f; //posicion inicial viendo frontalmente la escena
+    //	cameraX = 0.0f; cameraY = 0.0f; cameraZ = 200.0f; //posicion inicial viendo frontalmente la escena
     cameraX = 0.0f; cameraY = 20.0f; cameraZ = 500.0f;
     angleCamera = 0.5f;
+
 	RockLocX = -200.0f; RockLocY = 0.5f; RockLocZ = 0.0f;
-    HouseLocX = 50.0f; HouseLocY = 65.0f; HouseLocZ = 0.0f;
+    HouseLocX = 100.0f; HouseLocY = 65.0f; HouseLocZ = 0.0f;
     FlatLocX = 0.0f; FlatLocY = 0.0f; FlatLocZ = 0.0f;
     mountainLocX = 0.0f; mountainLocY = 0.0f; mountainLocZ = 0.0f;
+
+
     //houseNavLocX = 50.0f; houseNavLocY = 0.0f, houseNavLocZ = 50.0f;
 	glfwGetFramebufferSize(window, &width, &height);
 	aspect = (float)width / (float)height;
-	pMat = glm::perspective(1.0472f, aspect, 0.1f, 10000.0f);
+	pMat = glm::perspective(1.0472f, aspect, 0.1f, 100000.0f);
     pMat = glm::rotate(pMat, angleCamera ,glm::vec3(1.0,0.0,0.0));
 	setupVertices();
 
@@ -57,11 +70,11 @@ void init(GLFWwindow* window) {
     loadTexture("../textures/Rock_big_single_b_sandstone_flat.jpg", flatTexture);
     //loadTexture("../textures/Rock_big_single_b_sandstone_flat.jpg", flatTexture);
     //loadTexture("../textures/mountain/Color.png", mountainTexture);
-
 }
+
 void display(GLFWwindow* window, double currentTime) {
 	glClear(GL_DEPTH_BUFFER_BIT);
-	glClearColor(1.0, 1.0, 1.0, 1.0);
+	glClearColor(0.0,0.0, 0.0, 0.0);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glUseProgram(renderingProgram);
 
@@ -73,8 +86,9 @@ void display(GLFWwindow* window, double currentTime) {
 
 	vMat = glm::translate(glm::mat4(1.0f), glm::vec3(-cameraX, -cameraY, -cameraZ));
 
+    //mountain
     /*mMat = glm::translate(glm::mat4(1.0f), glm::vec3(mountainLocX, mountainLocY, mountainLocZ));
-    mMat = glm::scale(mMat,glm::vec3(10.0,10.0,10.0));
+    mMat = glm::scale(mMat,glm::vec3(1000.0,1000.0,1000.0));
 	mvMat = vMat * mMat;
     glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvMat));
 	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
@@ -108,8 +122,7 @@ void display(GLFWwindow* window, double currentTime) {
 	glBindTexture(GL_TEXTURE_2D, rockTexture);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
-	glDrawArraysInstanced(GL_TRIANGLES, 0, Rock.getNumVertices(), 10);
-
+	glDrawArraysInstanced(GL_TRIANGLES, 0, Rock.getNumVertices(), 4);
 
     //House
     mMat = glm::translate(glm::mat4(1.0f), glm::vec3(HouseLocX, HouseLocY, HouseLocZ));
@@ -127,13 +140,11 @@ void display(GLFWwindow* window, double currentTime) {
 	glEnableVertexAttribArray(1);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, houseTexture);
-	//glEnable(GL_DEPTH_TEST);
-	//glDepthFunc(GL_LEQUAL);
 	glDrawArrays(GL_TRIANGLES, 0, House.getNumVertices());
-
 
     //Flat
     mMat = glm::translate(glm::mat4(1.0f), glm::vec3(FlatLocX, FlatLocY, FlatLocZ));
+    //mMat = glm::scale(mMat,glm::vec3(2.0,2.0,2.0));
 	mvMat = vMat * mMat;
     glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvMat));
 	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
@@ -146,10 +157,47 @@ void display(GLFWwindow* window, double currentTime) {
 	glEnableVertexAttribArray(1);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, flatTexture);
-	//glEnable(GL_DEPTH_TEST);
-	//glDepthFunc(GL_LEQUAL);
-	glDrawArrays(GL_TRIANGLES, 0, House.getNumVertices());
+	glDrawArrays(GL_TRIANGLES, 0, 6);
 
+
+    //Human
+    //trunk
+    posTrunk = glm::vec4(0.0,10.0,0.0,1.0);
+    mMat  = glm::translate(glm::mat4(1.0f), glm::vec3(posTrunk));
+    mMat  = glm::scale(mMat, glm::vec3(2.0,1.0,2.0));
+    mvMat = vMat * mMat;
+    glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvMat));
+	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
+    glUniform1i(obj,4);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[11]);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(0);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    //left leg
+    posLeftLeg = glm::vec4(0.0,0.0,0.0,1.0);
+    mMat  = glm::translate(glm::mat4(1.0f), glm::vec3(posLeftLeg));
+    mMat  = glm::scale(mMat, glm::vec3(1.0,9.0,1.0));
+    mvMat = vMat * mMat;
+    glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvMat));
+	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
+    glUniform1i(obj,4);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[11]);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(0);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    //right leg
+    /*mMat  = glm::translate(glm::mat4(1.0f), glm::vec3(rightLegLocX,rightLegLocY,rightLegLocZ));
+    mMat  = glm::scale(mMat, glm::vec3(1.0,5.0,1.0));
+    mvMat = vMat * mMat;
+    glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvMat));
+	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
+    glUniform1i(obj,4);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[11]);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(0);
+    glDrawArrays(GL_TRIANGLES, 0, 36);*/
 }
 
 int main(void) {
@@ -228,6 +276,7 @@ void windowSizeCallback(GLFWwindow* win, int newWidth, int newHeight) {
 	pMat = glm::perspective(1.0472f, aspect, 0.1f, 1000.0f);
 }
 
+
 void setupVertices(void) {
     glGenVertexArrays(1, vao);
 	glBindVertexArray(vao[0]);
@@ -305,17 +354,14 @@ void setupVertices(void) {
 	glBufferData(GL_ARRAY_BUFFER, nvaluesMountain.size() * 4, &nvaluesMountain[0], GL_STATIC_DRAW);*/
 
 
-
-
-
     //Plane
     float side= 2000.0f,levelY=0.0f; // lado y pos en el eje y
     float posSide = (float)side/2.0f;
-    float flatPositions[18] = // 2 triangles * 3 vertex * 3 floats = 18 floats
+    float flatPositions[18] = // ((6vertex)2 triangles)* 3 floats = 18 floats
 	{ -posSide, levelY, posSide, -posSide, levelY, -posSide, posSide, levelY, posSide,
       posSide, levelY, posSide, posSide, levelY, -posSide, -posSide, levelY, -posSide};
 
-	float textureFlatCoordinates[12] =
+	float textureFlatCoordinates[12] = //4vertex
 	{ 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f,
       1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f};
 
@@ -323,4 +369,26 @@ void setupVertices(void) {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(flatPositions), flatPositions, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, vbo[7]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(textureFlatCoordinates),textureFlatCoordinates, GL_STATIC_DRAW);
+
+
+    //Human
+    float cubePositions[108] = //36 vertex, every face using two triangles, 2x6 = 12 triangles x 3 vertex
+			{ -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f,
+					-1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f,
+					-1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f,
+					-1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f,
+					-1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f,
+					-1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f,
+					-1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f,
+					-1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f,
+					-1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f,
+					-1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,
+					-1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
+					1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, -1.0f, };
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[11]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cubePositions), cubePositions, GL_STATIC_DRAW);
+    //glBindBuffer(GL_ARRAY_BUFFER, vbo[12]);
+	//glBufferData(GL_ARRAY_BUFFER, sizeof(textureFlatCoordinates),textureFlatCoordinates, GL_STATIC_DRAW);
+
 }
