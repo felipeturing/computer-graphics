@@ -6,7 +6,7 @@ He puesto dos escenas una con montañas y otra con una casa y piedras, a partir 
 
 Lo que quiero presentar para la primera expo:
 
-    1. Quiero poner un humano, quizá con paralelepipdos(piernas, tronco, cabeza) y hacer la animaciones de caminar.
+    1. Quiero poner un humano, quizá con paralelepipdos(piernas, tronco,brazos, cabeza) y hacer la animaciones de caminar.
     2. A parte quiero poner la camara en tercera y en primera persona, y cuando el humano gire su cabeza la camara se mueva con ella.
 
 
