@@ -20,7 +20,8 @@ void main(void)
     }else if(obj == 2){
         gl_Position = proj_matrix * mv_matrix * vec4(position,1.0);
     }else{
-        gl_Position = proj_matrix * mv_matrix * vec4(position,1.0);}
+        gl_Position = proj_matrix * mv_matrix * vec4(position,1.0);
+    }
 	tc = tex_coord;
 
 }
