@@ -13,12 +13,10 @@ layout (binding=0) uniform sampler2D s;
 
 void main(void)
 {
-    if(obj == 1){
+    if(obj == 1){// la roca
         vec3 newposition;
         newposition = position + vec3(0.0,0.0,-180.0*(gl_InstanceID));
         gl_Position = proj_matrix * mv_matrix * vec4(newposition,1.0);
-    }else if(obj == 2){
-        gl_Position = proj_matrix * mv_matrix * vec4(position,1.0);
     }else{
         gl_Position = proj_matrix * mv_matrix * vec4(position,1.0);
     }

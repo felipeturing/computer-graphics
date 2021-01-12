@@ -23,26 +23,24 @@ using namespace std;
 #define numVBOs 23
 
 // global variables
-float cameraX, cameraY, cameraZ, RockLocX, RockLocY, RockLocZ,HouseLocX,HouseLocY,HouseLocZ, FlatLocX, FlatLocY, FlatLocZ,SkyLocX,SkyLocY,SkyLocZ,aspect,mountainLocX,mountainLocY,mountainLocZ,houseNavLocX,houseNavLocY,houseNavLocZ,humanPosZ,humanPosY,humanPosX, closeto,angleCamera, angleCameraInc, step, incRotLeg1, incRotLeg2,rotLeg1,rotLeg2,rotLeg3, incRotLeg3,rotArm,incRotArm, rotBodyHuman, incRotBodyHuman,incJumping;
+float cameraX, cameraY, cameraZ, RockLocX, RockLocY, RockLocZ, HouseLocX, HouseLocY, HouseLocZ, FlatLocX, FlatLocY, FlatLocZ, SkyLocX, SkyLocY, SkyLocZ, aspect, mountainLocX,  mountainLocY, mountainLocZ, humanPosZ, humanPosY, humanPosX, closeto, angleCamera, angleCameraInc, step, incRotLeg1, incRotLeg2, rotLeg1, rotLeg2, rotLeg3, incRotLeg3, rotArm, incRotArm, rotSky, incRotSky, rotBodyHuman, incRotBodyHuman, incJumping;
 
 GLuint renderingProgram, vao[numVAOs], vbo[numVBOs], mvLoc, projLoc, obj, rockTexture, houseTexture, flatTexture,houseNavTexture, mountainTexture, skyTexture;
 
 int width, height, keyboard, actionKeyboard;
-bool walkingBool,jumpingBool;
-glm::mat4 pMat, vMat, mMat, mvMat;
 
+bool walkingBool,jumpingBool;
+
+glm::mat4 pMat, vMat, mMat, mvMat;
 glm::vec4 posLeftLeg, posRightLeg, posTrunk, posHead, posLeftArm, posRightArm;
 
 stack<glm::mat4> mvStack;
-
-
 
 // model and geometry
 ImportedModel Rock("../models/Rock_big_single_b_LOD0.obj");
 ImportedModel House("../models/house.obj");
 ImportedModel Mountain("../models/mountain/Mountain.obj");
 Sphere mySphere = Sphere(48);
-
 
 
 // prototypes
@@ -56,8 +54,8 @@ void sceneDessert(void);
 void sceneMountain(void);
 void humanAdvancedAnimation(void);
 void walking(int direction);
+void turning(int direction);
 void jumping(void);
-
 
 
 
@@ -72,19 +70,21 @@ void init(GLFWwindow* window) {
     mountainLocX = 0.0f; mountainLocY = 0.0f; mountainLocZ = 0.0f;
     SkyLocX = 0.0f;SkyLocY = 0.0f;SkyLocZ = 0.0f;
     humanPosZ = 300.0;humanPosX = 0.0;humanPosY = 40.0;
+
     step = 0.4f; closeto = 3.0f;rotLeg1=0.0;rotLeg2=0.0;
     incRotLeg1=0.05f/2.0f;incRotLeg2=2.0*(0.05f/2.0f);
     incRotArm=0.05f/2.0f; incRotLeg3 = 0.0; rotLeg3=0.0;
-
     rotBodyHuman = 0.0f; incRotBodyHuman = 2.0*(0.05f/2.0f);
+    rotSky = 0.0f; incRotSky = (float)M_PI/5000.0f;incJumping = 0.5f;
 
-    jumpingBool = false;incJumping = 0.5f;walkingBool=false;
+    jumpingBool = false;walkingBool=false;
 
 	glfwGetFramebufferSize(window, &width, &height);
 	aspect = (float)width / (float)height;
 	pMat = glm::perspective(1.3472f, aspect, 0.1f, 1000000.0f);
     pMat = glm::rotate(pMat, angleCamera ,glm::vec3(1.0,0.0,0.0));
-	setupVertices();
+
+    setupVertices();
 
     loadTexture("../textures/Rock_big_single_b_diffuse_desert.jpg", rockTexture);
     loadTexture("../textures/house/house_diffuse.jpg", houseTexture);
@@ -103,23 +103,25 @@ void display(GLFWwindow* window, double currentTime) {
 	projLoc = glGetUniformLocation(renderingProgram, "proj_matrix");
     obj = glGetUniformLocation(renderingProgram, "obj");
 
-	//vMat = glm::translate(glm::mat4(1.0f), glm::vec3(-cameraX, -cameraY, -cameraZ));
+
     vMat = glm::lookAt(glm::vec3(cameraX, cameraY, cameraZ)+glm::vec3(humanPosX, humanPosY,humanPosZ),
 						glm::vec3(humanPosX, humanPosY,humanPosZ),
 						glm::vec3(0.0f, 10.0f, 0.0f));
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
+
     sceneViewNavigation();
     //sceneMountain();
     sceneDessert();
     //humanBasicAnimation();
     humanAdvancedAnimation();
 }
+
 //definitions
 void sceneDessert(void){
     //rocks
 	mMat = glm::translate(glm::mat4(1.0f), glm::vec3(RockLocX, RockLocY, RockLocZ));
 	mvMat = vMat * mMat;
     glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvMat));
-	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
     glUniform1i(obj,1);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -139,7 +141,6 @@ void sceneDessert(void){
     mMat = glm::scale(mMat, glm::vec3(2.0,2.0,2.0));
 	mvMat = vMat * mMat;
     glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvMat));
-	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
     glUniform1i(obj,2);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[3]);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -155,7 +156,6 @@ void sceneDessert(void){
     mMat = glm::translate(glm::mat4(1.0f), glm::vec3(FlatLocX, FlatLocY, FlatLocZ));
 	mvMat = vMat * mMat;
     glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvMat));
-	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
     glUniform1i(obj,3);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[6]);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -167,12 +167,13 @@ void sceneDessert(void){
 	glBindTexture(GL_TEXTURE_2D, flatTexture);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 
-
+    //Sky
+    rotSky += incRotSky;
     mMat = glm::translate(glm::mat4(1.0f), glm::vec3(SkyLocX, SkyLocY, SkyLocZ));
+    mMat = glm::rotate(mMat, rotSky, glm::vec3(0.0,1.0,0.0));
     mMat = glm::scale(mMat, glm::vec3(10000.0,10000.0,10000.0));
     mvMat = vMat * mMat;
     glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvMat));
-    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
     glBindBuffer(GL_ARRAY_BUFFER, vbo[15]);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(0);
@@ -186,11 +187,10 @@ void sceneDessert(void){
 
 void sceneMountain(void){
     //mountain
-    mMat = glm::translate(glm::mat4(1.0f), glm::vec3(mountainLocX, mountainLocY, mountainLocZ));
+    /*mMat = glm::translate(glm::mat4(1.0f), glm::vec3(mountainLocX, mountainLocY, mountainLocZ));
     mMat = glm::scale(mMat,glm::vec3(100.0,100.0,100.0));
 	mvMat = vMat * mMat;
     glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvMat));
-	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
     glUniform1i(obj,4);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[8]);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -202,11 +202,12 @@ void sceneMountain(void){
 	glBindTexture(GL_TEXTURE_2D, mountainTexture);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
-	glDrawArrays(GL_TRIANGLES, 0, Mountain.getNumVertices());
+	glDrawArrays(GL_TRIANGLES, 0, Mountain.getNumVertices());*/
 }
 
 void walking(int direction){
     walkingBool=true;
+
     if(direction == 1){//hacia adelante
         humanPosZ -= step*cos(rotBodyHuman);
         humanPosX -= step*sin(rotBodyHuman);
@@ -214,10 +215,47 @@ void walking(int direction){
         humanPosZ += step*cos(rotBodyHuman);
         humanPosX += step*sin(rotBodyHuman);
     }
-    rotArm += incRotArm; //brazos
-    rotLeg1 += incRotLeg1; // los muslos
-    rotLeg2 += incRotLeg2; // canilla 1
-    rotLeg3 += incRotLeg3; // canilla 2
+
+    if (rotArm > M_PI/8.0){ // Rotar brazos desde -M_PI/8 hasta M_PI/8
+            incRotArm = -0.05/2.0;
+    }
+    else if (rotArm < -M_PI/8.0){
+        incRotArm = 0.05/2.0;
+    }
+    rotArm += incRotArm;
+
+
+    if (rotLeg1 > M_PI/8.0){ // Rotar muslos de de -M_PI/8 hasta M_PI/8
+        incRotLeg1 = -0.05/2.0;
+    }
+    else if (rotLeg1 < -M_PI/8.0){
+        incRotLeg1 = 0.05/2.0;
+    }
+    rotLeg1 += incRotLeg1;
+
+
+    if(rotLeg2 > M_PI/4.0f){ //Rotación de canilla derecha inicialmente está rotado M_PI/4
+        incRotLeg2 = 0.0;
+    }
+    if(rotLeg1 < -M_PI/8.0){ //comienza cuando el muslo está en -M_PI/8
+        incRotLeg2 = -2.0*(0.05/2.0);
+    }
+    if(rotLeg2 < 0.0){
+        incRotLeg2 = 2.0*(0.05/2.0);
+    }
+    rotLeg2 += incRotLeg2; //
+
+
+    if(rotLeg3 > M_PI/4.0f){//Rotación de canilla izquierda
+        incRotLeg3 = -2.0*(0.05/2.0);
+    }
+    if(rotLeg1 > M_PI/8.0){ //Rotación de canilla izquierda comienza cuando el muslo está en -M_PI/8
+        incRotLeg3 = 2.0*(0.05/2.0);
+    }
+    if(rotLeg1 < -M_PI/8.0){
+        incRotLeg3 = 0.0;
+    }
+    rotLeg3 += incRotLeg3;
 }
 
 void turning(int direction){
@@ -242,14 +280,13 @@ void jumping(void){
 
 void humanAdvancedAnimation(void){
 
-
     if (keyboard == 84 && (actionKeyboard==GLFW_PRESS || actionKeyboard == GLFW_REPEAT)){ //T
         walking(1);
     }else if (keyboard == 71 && (actionKeyboard==GLFW_PRESS || actionKeyboard == GLFW_REPEAT)){ //G
         walking(2);
     }
 
-    if (keyboard == GLFW_KEY_SPACE && actionKeyboard==GLFW_PRESS ){ //W
+    if (keyboard == GLFW_KEY_SPACE && actionKeyboard==GLFW_PRESS ){ //space
         jumpingBool = true;
     }
 
@@ -268,10 +305,9 @@ void humanAdvancedAnimation(void){
     glUniform1i(obj,43);
     mvStack.push(mvStack.top());
     mvStack.top() *= glm::translate(glm::mat4(1.0f), glm::vec3(humanPosX,humanPosY,humanPosZ));
-    mvStack.top() *= glm::rotate(glm::mat4(1.0f), (float)M_PI  ,glm::vec3(0.0,1.0,0.0));
-    mvStack.top() *= glm::rotate(glm::mat4(1.0f), rotBodyHuman  ,glm::vec3(0.0,1.0,0.0));
+    mvStack.top() *= glm::rotate(glm::mat4(1.0f), (float)M_PI  ,glm::vec3(0.0,1.0,0.0));//mirar hacia adelante
+    mvStack.top() *= glm::rotate(glm::mat4(1.0f), rotBodyHuman  ,glm::vec3(0.0,1.0,0.0));//rotacion
     mvStack.push(mvStack.top());
-
     mvStack.top() *= glm::scale(glm::mat4(1.0f), glm::vec3(2.0,2.25,2.0));
     glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvStack.top()));
     glBindBuffer(GL_ARRAY_BUFFER, vbo[11]);
@@ -308,12 +344,13 @@ void humanAdvancedAnimation(void){
 
     //ARMS
         // Right
-        if (rotArm > M_PI/8.0){
+        /*if (rotArm > M_PI/8.0){ // Rotación de brazos de -M_PI/8 hasta M_PI/8
             incRotArm = -0.05/2.0;
         }
         else if (rotArm < -M_PI/8.0){
             incRotArm = 0.05/2.0;
-        }
+        }*/
+
         //if(walkingBool == 1){rotArm += incRotArm;}
                 //Arm top
                 glUniform1i(obj,42);
@@ -420,12 +457,12 @@ void humanAdvancedAnimation(void){
     mvStack.pop();
 
     //LEGS
-    if (rotLeg1 > M_PI/8.0){
+    /*if (rotLeg1 > M_PI/8.0){
         incRotLeg1 = -0.05/2.0;
     }
     else if (rotLeg1 < -M_PI/8.0){
         incRotLeg1 = 0.05/2.0;
-    }
+    }*/
     //if(walkingBool == 1){rotLeg1 += incRotLeg1;}
             //RIGHT
                 glUniform1i(obj,44);
@@ -445,11 +482,9 @@ void humanAdvancedAnimation(void){
                 glUniform1i(obj,43);
                 mvStack.push(mvStack.top());
                 mvStack.top() *= glm::translate(glm::mat4(1.0f), glm::vec3(0.0,-(4.5 + 4.5 + 5.5)+5.5,0.0));
-
                 mvStack.top() *= glm::rotate(glm::mat4(1.0f), (float)M_PI/4.0f, glm::vec3(1.0,0.0,0.0));
 
-
-                if(rotLeg2 > M_PI/4.0f){
+                /*if(rotLeg2 > M_PI/4.0f){
                     incRotLeg2 = 0.0;
                 }
                 if(rotLeg1 < -M_PI/8.0){
@@ -457,8 +492,7 @@ void humanAdvancedAnimation(void){
                 }
                 if(rotLeg2 < 0.0){
                     incRotLeg2 = 2.0*(0.05/2.0);
-                }
-
+                }*/
                 mvStack.top() *= glm::rotate(glm::mat4(1.0f), -rotLeg2, glm::vec3(1.0,0.0,0.0));
                 mvStack.push(mvStack.top());
                 mvStack.top() *= glm::translate(glm::mat4(1.0f),glm::vec3(0.0,-5.5,0.0));
@@ -502,7 +536,7 @@ void humanAdvancedAnimation(void){
                 mvStack.push(mvStack.top());
                 mvStack.top() *= glm::translate(glm::mat4(1.0f), glm::vec3(0.0,-(4.5 + 4.5 + 5.5)+5.5,0.0));
 
-                if(rotLeg3 > M_PI/4.0f){
+                /*if(rotLeg3 > M_PI/4.0f){
                     incRotLeg3 = -2.0*(0.05/2.0);
                 }
                 if(rotLeg1 > M_PI/8.0){
@@ -510,7 +544,7 @@ void humanAdvancedAnimation(void){
                 }
                 if(rotLeg1 < -M_PI/8.0){
                     incRotLeg3 = 0.0;
-                }
+                }*/
 
                 //if(walkingBool == 1){rotLeg3 += incRotLeg3;}
                 mvStack.top() *= glm::rotate(glm::mat4(1.0f), rotLeg3, glm::vec3(1.0,0.0,0.0));
@@ -681,7 +715,7 @@ int main(void) {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 
     GLFWwindow *window;
-	window = glfwCreateWindow(1200, 700, "Game - Felipe", NULL, NULL);
+	window = glfwCreateWindow(1200, 700, "TAU v0.01", NULL, NULL);
 
     //set keyboard callback
     glfwSetKeyCallback(window, keyCallback);
@@ -703,13 +737,14 @@ int main(void) {
 }
 
 void sceneViewNavigation(void){
-    if (keyboard == 87 && (actionKeyboard==GLFW_PRESS || actionKeyboard == GLFW_REPEAT) ){ //W
+    /*if (keyboard == 87 && (actionKeyboard==GLFW_PRESS || actionKeyboard == GLFW_REPEAT) ){ //W
         cameraZ -= closeto;
     }else if (keyboard == 83 && (actionKeyboard==GLFW_PRESS || actionKeyboard == GLFW_REPEAT)){ //S
         cameraZ += closeto;
-    }else if (keyboard == 65 && (actionKeyboard==GLFW_PRESS || actionKeyboard == GLFW_REPEAT)){ //S
+    }else*/
+    if (keyboard == 262 && (actionKeyboard==GLFW_PRESS || actionKeyboard == GLFW_REPEAT)){ //S
         cameraX -= closeto;
-    }else if (keyboard == 68 && (actionKeyboard==GLFW_PRESS || actionKeyboard == GLFW_REPEAT)){ //S
+    }else if (keyboard == 263 && (actionKeyboard==GLFW_PRESS || actionKeyboard == GLFW_REPEAT)){ //S
         cameraX += closeto;
     }else if (keyboard == 265 && (actionKeyboard==GLFW_PRESS || actionKeyboard == GLFW_REPEAT)){ //UP
         cameraY += closeto;
@@ -787,7 +822,7 @@ void setupVertices(void) {
 	glBufferData(GL_ARRAY_BUFFER, nvaluesHouse.size() * 4, &nvaluesHouse[0], GL_STATIC_DRAW);
 
     //Mountain lee 1 millón de lineas del obj para la montaña, así que se demora al cargar en mi pc
-    std::vector<glm::vec3> vertMountain = Mountain.getVertices();
+    /*std::vector<glm::vec3> vertMountain = Mountain.getVertices();
     std::vector<glm::vec2> texMountain = Mountain.getTextureCoords();
 	std::vector<glm::vec3> normMountain = Mountain.getNormals();
     std::vector<float> pvaluesMountain;
@@ -808,7 +843,7 @@ void setupVertices(void) {
     glBindBuffer(GL_ARRAY_BUFFER, vbo[9]);
 	glBufferData(GL_ARRAY_BUFFER, tvaluesMountain.size()*4, &tvaluesMountain[0], GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[10]);
-	glBufferData(GL_ARRAY_BUFFER, nvaluesMountain.size() * 4, &nvaluesMountain[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, nvaluesMountain.size() * 4, &nvaluesMountain[0], GL_STATIC_DRAW);*/
 
     //Plane
     float side= 2000.0f,levelY=0.0f; // lado y pos en el eje y
@@ -885,5 +920,4 @@ void setupVertices(void) {
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[17]);
 	glBufferData(GL_ARRAY_BUFFER, nvalues.size()*4, &nvalues[0], GL_STATIC_DRAW);
-
 }
