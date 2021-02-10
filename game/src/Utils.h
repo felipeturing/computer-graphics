@@ -59,7 +59,7 @@ void loadTexture(const char *texImagePath, GLuint& imageTexture1)
 			            GL_UNSIGNED_BYTE,    // Image data type
 			            image.ptr());        // The actual image data itself
 	}
-    glGenerateMipmap(GL_TEXTURE_2D);
+   glGenerateMipmap(GL_TEXTURE_2D);
 }
 
 string readShaderFile(const char *filePath) {
