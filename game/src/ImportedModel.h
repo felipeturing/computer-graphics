@@ -7,6 +7,8 @@ private:
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::vec2> texCoords;
 	std::vector<glm::vec3> normalVecs;
+    std::vector<glm::vec3> tangents;
+    std::vector<glm::vec3> bitangents;
 public:
 	ImportedModel();
 	ImportedModel(const char *filePath);
@@ -14,6 +16,8 @@ public:
 	std::vector<glm::vec3> getVertices();
 	std::vector<glm::vec2> getTextureCoords();
 	std::vector<glm::vec3> getNormals();
+    std::vector<glm::vec3> getTangents();
+    std::vector<glm::vec3> getBitangents();
 };
 
 class ModelImporter

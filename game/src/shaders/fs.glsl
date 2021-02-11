@@ -1,6 +1,8 @@
 #version 430
 
 in vec3 varyingNormal, varyingLightDir, varyingVertPos, varyingHalfVec;
+in vec3 varyingTangent;
+in vec3 originalVertex;
 in vec4 shadow_coord;
 in vec2 tc;
 
@@ -27,7 +29,22 @@ uniform int obj;
 
 layout (binding=0) uniform sampler2DShadow shadowTex;
 layout (binding=1) uniform sampler2D s;
+layout (binding=2) uniform sampler2D normMap;
 
+
+vec3 calcNewNormal()
+{
+	vec3 normal = normalize(varyingNormal);
+	vec3 tangent = normalize(varyingTangent);
+	tangent = normalize(tangent - dot(tangent, normal) * normal);
+	vec3 bitangent = cross(tangent, normal);
+	mat3 tbn = mat3(tangent, bitangent, normal);
+	vec3 retrievedNormal = texture(normMap,tc).xyz;
+	retrievedNormal = retrievedNormal * 2.0 - 1.0;
+	vec3 newNormal = tbn * retrievedNormal;
+	newNormal = normalize(newNormal);
+	return newNormal;
+}
 
 float lookup(float x, float y)
 {  	float t = textureProj(shadowTex, shadow_coord + vec4(x * 0.001 * shadow_coord.w,
@@ -38,10 +55,10 @@ float lookup(float x, float y)
 
 void main(void){
     float shadowFactor=0.0;
-
+    vec4 color;
 	vec3 L = normalize(varyingLightDir);
-	vec3 N = normalize(varyingNormal);
-	vec3 V = normalize(-varyingVertPos);
+    vec3 V = normalize(-varyingVertPos);
+	vec3 N = calcNewNormal();
 	vec3 H = normalize(varyingHalfVec);
 
     /*float swidth = 2.5;
@@ -54,25 +71,33 @@ void main(void){
 
     //shadowFactor = lookup(0.0, 0.0);
     // hi res PCF
-    float width = 2.5;
+    /*float width = 2.5;
 	float endp = width * 3.0 + width/2.0;
 	for (float m=-endp ; m<=endp ; m=m+width)
 	{	for (float n=-endp ; n<=endp ; n=n+width)
 		{	shadowFactor += lookup(m,n);
 	}	}
-	shadowFactor = shadowFactor / 64.0;
+	shadowFactor = shadowFactor / 64.0;*/
 
 	// this would produce normal hard shadows
-	//shadowFactor = lookup(0.0, 0.0);
+	shadowFactor = lookup(0.0, 0.0);
+
     vec4 shadowColor = globalAmbient * material.ambient
 				+ light.ambient * material.ambient;
     vec4 lightedColor = light.diffuse * material.diffuse * max(dot(L,N),0.0)
 				+ light.specular * material.specular
 				* pow(max(dot(H,N),0.0),material.shininess*3.0);
 
-    fragcolor = vec4((shadowColor.xyz + shadowFactor*(0.5*lightedColor.xyz+ 0.5*texture(s,tc).xyz)),1.0);
-    //fragcolor = 0.5*lightedColor + 0.5*texture(s,tc);
 
+    if (obj==43){ // human body
+        color= vec4(0.55,0.0,0.55,1.0);
+    }else{
+	    color = texture(s,tc);
+    }
+
+
+    fragcolor = vec4((shadowColor.xyz + shadowFactor*(0.5*lightedColor.xyz+ 0.5*color.xyz)),1.0);
+    //fragcolor = 0.5*lightedColor + 0.5*texture(s,tc);
 }
 
 

@@ -14,6 +14,8 @@
     3.
     4.
 **/
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
@@ -37,7 +39,6 @@
 #include "ImportedModel.h"
 
 using namespace std;
-
 
 
 /* Prototipos*/
@@ -70,8 +71,7 @@ void jumping(void);
 
 /*VAO y VBO*/
 #define numVAOs 1
-#define numVBOs 23
-
+#define numVBOs 50
 
 
 
@@ -88,7 +88,7 @@ void jumping(void);
 **/
 float cameraX, cameraY, cameraZ, RockLocX, RockLocY, RockLocZ, HouseLocX, HouseLocY, HouseLocZ, FlatLocX, FlatLocY, FlatLocZ, SkyLocX, SkyLocY, SkyLocZ, aspect, mountainLocX,  mountainLocY, mountainLocZ, humanPosZ, humanPosY, humanPosX, closeto, angleCamera, angleCameraInc, step, incRotLeg1, incRotLeg2, rotLeg1, rotLeg2, rotLeg3, incRotLeg3, rotArm, incRotArm, rotSky, incRotSky, rotBodyHuman, incRotBodyHuman, incJumping;
 
-GLuint renderingProgram, renderingProgram1, vao[numVAOs], vbo[numVBOs], mvLoc, projLoc, nLoc, sLoc, obj,rockTexture, houseTexture, flatTexture,houseNavTexture, mountainTexture, skyTexture;
+GLuint renderingProgram, renderingProgram1, vao[numVAOs], vbo[numVBOs], mvLoc, projLoc, nLoc, sLoc, obj,rockTexture,rockNormalMap, houseTexture,houseNormalMap, flatTexture,houseNavTexture, mountainTexture, skyTexture;
 
 int width, height, keyboard, actionKeyboard;
 
@@ -100,7 +100,8 @@ glm::vec3 lightLoc(300.0f, 500.0f, 0.0f); // Posición inicial de la Luz
 
 stack<glm::mat4> mvStack;
 
-float globalAmbient[4] = { 0.7f, 0.7f, 0.7f, 1.0f };
+//float globalAmbient[4] = { 0.7f, 0.7f, 0.7f, 1.0f };
+float globalAmbient[4] = {0.8313725f, 0.9215686f, 1.0f};// Cool White Fluorescent
 float lightAmbient[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 float lightDiffuse[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 float lightSpecular[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -116,6 +117,12 @@ float* bMatAmb = Utils::bronzeAmbient();
 float* bMatDif = Utils::bronzeDiffuse();
 float* bMatSpe = Utils::bronzeSpecular();
 float bMatShi = Utils::bronzeShininess();
+
+/* material de silver*/
+float* sMatAmb = Utils::silverAmbient();
+float* sMatDif = Utils::silverDiffuse();
+float* sMatSpe = Utils::silverSpecular();
+float sMatShi = Utils::silverShininess();
 
 float thisAmb[4], thisDif[4], thisSpe[4], matAmb[4], matDif[4], matSpe[4],thisShi, matShi;
 
@@ -247,20 +254,23 @@ void init(GLFWwindow* window) {
     loadTexture("../textures/mountain/Color.png", mountainTexture);
     loadTexture("../textures/sky/sky4.jpg", skyTexture);*/
 
-    rockTexture = Utils::loadTexture("./../textures/Rock_big_single_b_diffuse_desert.jpg");
-    houseTexture = Utils::loadTexture("./../textures/house/house_diffuse.jpg");
-    flatTexture = Utils::loadTexture("./../textures/Rock_big_single_b_sandstone_flat.jpg");
+    rockTexture = Utils::loadTexture("./../textures/Rock_big_single_b_diffuse_desert.tga");
+    houseTexture = Utils::loadTexture("./../textures/house/house_diffuse.tga");
+    flatTexture = Utils::loadTexture("./../textures/Rock_big_single_b_sandstone_flat.tga");
     skyTexture = Utils::loadTexture("./../textures/sky/sky4.jpg");
+    rockNormalMap = Utils::loadTexture("./../textures/Rock_big_single_b_normals.tga");
+    houseNormalMap =Utils::loadTexture("./../textures/house/house_normal.tga");
 }
 
 void passOne(void){
     glUseProgram(renderingProgram1);
 
+    sLoc = glGetUniformLocation(renderingProgram1, "shadowMVP");
+    obj = glGetUniformLocation(renderingProgram1, "obj");
+
     //dibujar las rocas
     mMat = glm::translate(glm::mat4(1.0f), glm::vec3(RockLocX, RockLocY, RockLocZ));
     shadowMVP1 = lightPmatrix * lightVmatrix * mMat;
-    sLoc = glGetUniformLocation(renderingProgram1, "shadowMVP");
-    obj = glGetUniformLocation(renderingProgram1, "obj");
     glUniformMatrix4fv(sLoc, 1, GL_FALSE, glm::value_ptr(shadowMVP1));
     glUniform1i(obj,1);
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
@@ -273,11 +283,13 @@ void passOne(void){
 	glDepthFunc(GL_LEQUAL);
     glDrawArraysInstanced(GL_TRIANGLES, 0, Rock.getNumVertices(), 4);
 
+
+
     //dibujar el plano
     mMat = glm::translate(glm::mat4(1.0f), glm::vec3(FlatLocX, FlatLocY, FlatLocZ));
     shadowMVP1 = lightPmatrix * lightVmatrix * mMat;
 	glUniformMatrix4fv(sLoc, 1, GL_FALSE, glm::value_ptr(shadowMVP1));
-    glUniform1i(obj,3);
+    glUniform1i(obj,2);
     glBindBuffer(GL_ARRAY_BUFFER, vbo[6]);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(0);
@@ -287,7 +299,69 @@ void passOne(void){
 	glDepthFunc(GL_LEQUAL);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
+    //dibujar la casa
+    mMat = glm::translate(glm::mat4(1.0f), glm::vec3(HouseLocX, HouseLocY+30.0, HouseLocZ));
+    mMat = glm::rotate(mMat, 2.5f, glm::vec3(0.0,1.0,0.0));
+    mMat = glm::scale(mMat, glm::vec3(2.0,2.0,2.0));
+    shadowMVP1 = lightPmatrix * lightVmatrix * mMat;
+	glUniformMatrix4fv(sLoc, 1, GL_FALSE, glm::value_ptr(shadowMVP1));
+    glUniform1i(obj,2);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[3]);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(0);
+    //glEnable(GL_CULL_FACE);
+	//glFrontFace(GL_CCW);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+	glDrawArrays(GL_TRIANGLES, 0, House.getNumVertices());
+
+    /**
+    *
+    *
+    *
+    * Robot
+    *
+    **/
+
+    /*mMat = glm::translate(glm::mat4(1.0f), glm::vec3(humanPosX,humanPosY+5.0f,humanPosZ));
+    mMat = glm::rotate(mMat, (float)M_PI  ,glm::vec3(0.0,1.0,0.0));
+    mMat = glm::rotate(mMat, rotBodyHuman  ,glm::vec3(0.0,1.0,0.0));
+    //mMat = glm::scale(mMat, glm::vec3(2.0,2.25,2.0));
+    mMat = glm::scale(mMat, glm::vec3(5.0,5.0,5.0));
+    shadowMVP1 = lightPmatrix * lightVmatrix * mMat;
+    glUniformMatrix4fv(sLoc, 1, GL_FALSE, glm::value_ptr(shadowMVP1));
+    glUniform1i(obj,43);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[11]);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
+    //glEnable(GL_CULL_FACE);
+	//glFrontFace(GL_CCW);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+    glDrawArrays(GL_TRIANGLES, 0, 36);*/
+
+
+    /*mvStack.push(glm::translate(glm::mat4(1.0f), glm::vec3(humanPosX,humanPosY,humanPosZ)));
+    mvStack.top() *= glm::rotate(glm::mat4(1.0f), (float)M_PI  ,glm::vec3(0.0,1.0,0.0));//mirar hacia adelante
+    mvStack.top() *= glm::rotate(glm::mat4(1.0f), rotBodyHuman  ,glm::vec3(0.0,1.0,0.0));//rotacion
+    mvStack.push(mvStack.top());
+    mvStack.top() *= glm::scale(glm::mat4(1.0f), glm::vec3(2.0,2.25,2.0));
+    shadowMVP1 = lightPmatrix * lightVmatrix * mvStack.top();
+    glUniformMatrix4fv(sLoc, 1, GL_FALSE, glm::value_ptr(shadowMVP1));
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[11]);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
+    //glEnable(GL_CULL_FACE);
+	//glFrontFace(GL_CCW);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    mvStack.pop();
+    mvStack.pop();*/
+
 }
+
+
 void passTwo(void){
     glUseProgram(renderingProgram);
 
@@ -297,10 +371,10 @@ void passTwo(void){
     nLoc = glGetUniformLocation(renderingProgram, "norm_matrix");
 	sLoc = glGetUniformLocation(renderingProgram, "shadowMVP");
 
-    /*vMat = glm::lookAt(glm::vec3(cameraX, cameraY, cameraZ)+glm::vec3(humanPosX, humanPosY,humanPosZ),
+    vMat = glm::lookAt(glm::vec3(cameraX, cameraY, cameraZ)+glm::vec3(humanPosX, humanPosY,humanPosZ),
 						glm::vec3(humanPosX, humanPosY,humanPosZ),
-						glm::vec3(0.0f, 10.0f, 0.0f));*/
-    vMat = glm::translate(glm::mat4(1.0f), glm::vec3(cameraX, cameraY, cameraZ));
+						glm::vec3(0.0f, 10.0f, 0.0f));
+    /*vMat = glm::translate(glm::mat4(1.0f), glm::vec3(cameraX, cameraY, cameraZ));*/
 
     sceneViewNavigation();
 
@@ -326,14 +400,26 @@ void passTwo(void){
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(0);
+
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[2]);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(1);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[49]);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(3);
+
+	/*glBindBuffer(GL_ARRAY_BUFFER, vbo[48]);
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(4);*/
+
     glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(2);
     glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, rockTexture);
+    glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, rockNormalMap);
     glClear(GL_DEPTH_BUFFER_BIT);
 	//glEnable(GL_CULL_FACE);
 	//glFrontFace(GL_CCW);
@@ -343,10 +429,10 @@ void passTwo(void){
 
 
     //dibujar el plano
-    thisAmb[0] = gMatAmb[0]; thisAmb[1] = gMatAmb[1]; thisAmb[2] = gMatAmb[2];  // gold
-	thisDif[0] = gMatDif[0]; thisDif[1] = gMatDif[1]; thisDif[2] = gMatDif[2];
-	thisSpe[0] = gMatSpe[0]; thisSpe[1] = gMatSpe[1]; thisSpe[2] = gMatSpe[2];
-	thisShi = gMatShi;
+    thisAmb[0] = bMatAmb[0]; thisAmb[1] = bMatAmb[1]; thisAmb[2] = bMatAmb[2];  // bronze
+	thisDif[0] = bMatDif[0]; thisDif[1] = bMatDif[1]; thisDif[2] = bMatDif[2];
+	thisSpe[0] = bMatSpe[0]; thisSpe[1] = bMatSpe[1]; thisSpe[2] = bMatSpe[2];
+	thisShi = bMatShi;
 
     mMat = glm::translate(glm::mat4(1.0f), glm::vec3(FlatLocX, FlatLocY, FlatLocZ));
 
@@ -369,11 +455,18 @@ void passTwo(void){
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[8]);//vbo[8]: normal
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[7]);//vbo[7]: texures
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[47]);//vbo[47]: tangents flat
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(3);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[7]);//vbo[7]: textures
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(2);
     glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, flatTexture);
+    glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, rockNormalMap);
     glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
     glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
     //glEnable(GL_CULL_FACE);
@@ -381,6 +474,84 @@ void passTwo(void){
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
     glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    //dibujar la casa
+    thisAmb[0] = sMatAmb[0]; thisAmb[1] = sMatAmb[1]; thisAmb[2] = sMatAmb[2];  // bronze
+	thisDif[0] = sMatDif[0]; thisDif[1] = sMatDif[1]; thisDif[2] = sMatDif[2];
+	thisSpe[0] = sMatSpe[0]; thisSpe[1] = sMatSpe[1]; thisSpe[2] = sMatSpe[2];
+	thisShi = sMatShi;
+
+    mMat = glm::translate(glm::mat4(1.0f), glm::vec3(HouseLocX, HouseLocY+30.0, HouseLocZ));
+    mMat = glm::rotate(mMat, 2.5f, glm::vec3(0.0,1.0,0.0));
+    mMat = glm::scale(mMat, glm::vec3(2.0,2.0,2.0));
+    currentLightPos = glm::vec3(lightLoc);
+	installLights(renderingProgram, vMat);
+	mvMat = vMat * mMat;
+	invTrMat = glm::transpose(glm::inverse(mvMat));
+	shadowMVP2 = b * lightPmatrix * lightVmatrix * mMat;
+
+    glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvMat));
+	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
+	glUniformMatrix4fv(nLoc, 1, GL_FALSE, glm::value_ptr(invTrMat));
+	glUniformMatrix4fv(sLoc, 1, GL_FALSE, glm::value_ptr(shadowMVP2));
+    glUniform1i(obj,2);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[3]);//vertex
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[5]);//normals
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(1);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[46]);//tangents
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(3);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[4]);//textures
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(2);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, houseTexture);
+    glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, houseNormalMap);
+	glDrawArrays(GL_TRIANGLES, 0, House.getNumVertices());
+
+
+    //Robot
+    //Head
+    /*thisAmb[0] = gMatAmb[0]; thisAmb[1] = gMatAmb[1]; thisAmb[2] = gMatAmb[2];  // gold
+	thisDif[0] = gMatDif[0]; thisDif[1] = gMatDif[1]; thisDif[2] = gMatDif[2];
+	thisSpe[0] = gMatSpe[0]; thisSpe[1] = gMatSpe[1]; thisSpe[2] = gMatSpe[2];
+	thisShi = gMatShi;
+
+    mMat = glm::translate(glm::mat4(1.0f), glm::vec3(humanPosX,humanPosY,humanPosZ));
+    mMat = glm::rotate(mMat, (float)M_PI  ,glm::vec3(0.0,1.0,0.0));
+    mMat = glm::rotate(mMat, rotBodyHuman  ,glm::vec3(0.0,1.0,0.0));
+    mMat = glm::scale(mMat, glm::vec3(2.0,2.25,2.0));
+    currentLightPos = glm::vec3(lightLoc);
+	installLights(renderingProgram, vMat);
+
+	mvMat = vMat * mMat;
+	invTrMat = glm::transpose(glm::inverse(mvMat));
+	shadowMVP2 = b * lightPmatrix * lightVmatrix * mMat;
+	//shadowMVP2 = b * lightPmatrix * lightVmatrix * (glm::inverse(vMat)*mvMat);
+
+    glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvMat));
+	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
+	glUniformMatrix4fv(nLoc, 1, GL_FALSE, glm::value_ptr(invTrMat));
+	glUniformMatrix4fv(sLoc, 1, GL_FALSE, glm::value_ptr(shadowMVP2));
+    glUniform1i(obj,43);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[11]);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[14]);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(1);
+    glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+    glDrawArrays(GL_TRIANGLES, 0, 36);*/
 
 }
 
@@ -401,6 +572,27 @@ void display(GLFWwindow* window, double currentTime) {
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_POLYGON_OFFSET_FILL);	// for reducing
 	glPolygonOffset(2.0f, 4.0f);		//  shadow artifacts
+
+
+    if (keyboard == 84 && (actionKeyboard==GLFW_PRESS || actionKeyboard == GLFW_REPEAT)){ //T
+        walking(1);
+    }else if (keyboard == 71 && (actionKeyboard==GLFW_PRESS || actionKeyboard == GLFW_REPEAT)){ //G
+        walking(2);
+    }
+
+    if (keyboard == GLFW_KEY_SPACE && actionKeyboard==GLFW_PRESS ){ //space
+        jumpingBool = true;
+    }
+
+    if(jumpingBool == true){
+        jumping();
+    }
+
+    if (keyboard == 72 && (actionKeyboard==GLFW_PRESS || actionKeyboard == GLFW_REPEAT)){ //H
+        turning(1);
+    }else if (keyboard == 70 && (actionKeyboard==GLFW_PRESS || actionKeyboard == GLFW_REPEAT)){ //F
+        turning(2);
+    }
 
     passOne();
 
@@ -956,22 +1148,44 @@ void setupVertices(void) {
     glGenVertexArrays(1, vao);
 	glBindVertexArray(vao[0]);
 	glGenBuffers(numVBOs, vbo);
-    // Rocks
+
+
+    /* Model : Rocks
+    *  Vertices
+    *  Textures
+    *  Normals
+    */
  	std::vector<glm::vec3> vertRock = Rock.getVertices();
     std::vector<glm::vec2> texRock = Rock.getTextureCoords();
 	std::vector<glm::vec3> normRock = Rock.getNormals();
+    std::vector<glm::vec3> tanRock = Rock.getTangents();
+    std::vector<glm::vec3> bitRock = Rock.getBitangents();
     std::vector<float> pvaluesRock;
     std::vector<float> tvaluesRock;
 	std::vector<float> nvaluesRock;
+    std::vector<float> tavaluesRock;
+    std::vector<float> bivaluesRock;
+
     for (int i = 0; i < Rock.getNumVertices(); i++) {
 		pvaluesRock.push_back((vertRock[i]).x);
 		pvaluesRock.push_back((vertRock[i]).y);
 		pvaluesRock.push_back((vertRock[i]).z);
+
         tvaluesRock.push_back((texRock[i]).s);
 		tvaluesRock.push_back((texRock[i]).t);
+
 		nvaluesRock.push_back((normRock[i]).x);
 		nvaluesRock.push_back((normRock[i]).y);
 		nvaluesRock.push_back((normRock[i]).z);
+
+        tavaluesRock.push_back((tanRock[i]).x);
+        tavaluesRock.push_back((tanRock[i]).y);
+        tavaluesRock.push_back((tanRock[i]).z);
+
+        bivaluesRock.push_back((bitRock[i]).x);
+        bivaluesRock.push_back((bitRock[i]).y);
+        bivaluesRock.push_back((bitRock[i]).z);
+
 	}
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 	glBufferData(GL_ARRAY_BUFFER, pvaluesRock.size() * 4, &pvaluesRock[0], GL_STATIC_DRAW);
@@ -979,14 +1193,29 @@ void setupVertices(void) {
 	glBufferData(GL_ARRAY_BUFFER, tvaluesRock.size()*4, &tvaluesRock[0], GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[2]);
 	glBufferData(GL_ARRAY_BUFFER, nvaluesRock.size() * 4, &nvaluesRock[0], GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[49]);
+	glBufferData(GL_ARRAY_BUFFER, tavaluesRock.size() * 4, &tavaluesRock[0], GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[48]);
+	glBufferData(GL_ARRAY_BUFFER, bivaluesRock.size() * 4, &bivaluesRock[0], GL_STATIC_DRAW);
 
-    //House
+
+
+    /* Model : House
+    *  Vertices
+    *  Textures
+    *  Normals
+    */
     std::vector<glm::vec3> vertHouse = House.getVertices();
     std::vector<glm::vec2> texHouse = House.getTextureCoords();
 	std::vector<glm::vec3> normHouse = House.getNormals();
+    std::vector<glm::vec3> tanHouse= House.getTangents();
+    std::vector<glm::vec3> bitHouse= House.getBitangents();
     std::vector<float> pvaluesHouse;
     std::vector<float> tvaluesHouse;
 	std::vector<float> nvaluesHouse;
+    std::vector<float> tavaluesHouse;
+    std::vector<float> bivaluesHouse;
+
     for (int i = 0; i < House.getNumVertices(); i++) {
 		pvaluesHouse.push_back((vertHouse[i]).x);
 		pvaluesHouse.push_back((vertHouse[i]).y);
@@ -996,6 +1225,14 @@ void setupVertices(void) {
 		nvaluesHouse.push_back((normHouse[i]).x);
 		nvaluesHouse.push_back((normHouse[i]).y);
 		nvaluesHouse.push_back((normHouse[i]).z);
+
+        tavaluesHouse.push_back((tanRock[i]).x);
+        tavaluesHouse.push_back((tanRock[i]).y);
+        tavaluesHouse.push_back((tanRock[i]).z);
+
+        bivaluesHouse.push_back((bitHouse[i]).x);
+        bivaluesHouse.push_back((bitHouse[i]).y);
+        bivaluesHouse.push_back((bitHouse[i]).z);
 	}
     glBindBuffer(GL_ARRAY_BUFFER, vbo[3]);
 	glBufferData(GL_ARRAY_BUFFER, pvaluesHouse.size() * 4, &pvaluesHouse[0], GL_STATIC_DRAW);
@@ -1003,6 +1240,12 @@ void setupVertices(void) {
 	glBufferData(GL_ARRAY_BUFFER, tvaluesHouse.size()*4, &tvaluesHouse[0], GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[5]);
 	glBufferData(GL_ARRAY_BUFFER, nvaluesHouse.size() * 4, &nvaluesHouse[0], GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[46]);
+	glBufferData(GL_ARRAY_BUFFER, tavaluesHouse.size() * 4, &tavaluesHouse[0], GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[45]);
+	glBufferData(GL_ARRAY_BUFFER, bivaluesHouse.size() * 4, &bivaluesHouse[0], GL_STATIC_DRAW);
+
+
 
     //Mountain lee 1 millón de lineas del obj para la montaña, así que se demora al cargar en mi pc
     /*std::vector<glm::vec3> vertMountain = Mountain.getVertices();
@@ -1028,7 +1271,13 @@ void setupVertices(void) {
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[32]);
 	glBufferData(GL_ARRAY_BUFFER, nvaluesMountain.size() * 4, &nvaluesMountain[0], GL_STATIC_DRAW);*/
 
-    //Plane
+
+
+    /* Model : Flat
+    *  Vertices
+    *  Textures
+    *  Normals
+    */
     float side= 2000.0f,levelY=0.0f; // lado y pos en el eje y
     float posSide = (float)side/2.0f;
     float flatPositions[18] = // ((6vertex)2 triangles)* 3 floats = 18 floats
@@ -1038,6 +1287,10 @@ void setupVertices(void) {
     float normalsCoordinates[18] ={
         0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,
         0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0};
+
+    float tangentsFlat[18] ={
+        1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,
+        0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0};
 
 	float textureFlatCoordinates[12] = //4vertex
 	{ 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f,
@@ -1049,29 +1302,50 @@ void setupVertices(void) {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(textureFlatCoordinates),textureFlatCoordinates, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, vbo[8]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(normalsCoordinates),normalsCoordinates, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[47]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(tangentsFlat),tangentsFlat, GL_STATIC_DRAW);
+
 
 
     //Human
     float cubePositions[108] = //36 vertex, every face using two triangles, 2x6 = 12 triangles x 3 vertex
-			{ -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f,
-					-1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f,
-					-1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f,
-					-1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f,
-					-1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f,
-					-1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f,
-					-1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f,
-					-1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f,
-					-1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f,
-					-1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,
-					-1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
-					1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, -1.0f, };
+			{ -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, -1.0f,
+            1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f,
+            1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+            -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+            -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, 1.0f,
+            -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f,
+            -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,
+            -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+            1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, -1.0f, };
 
-    float cube2Positions[108] = //36 vertex, every face using two triangles, 2x6 = 12 triangles x 3 vertex
+    float normalsCube[108] = {
+            0.0f,-1.0f,0.0f,0.0f,-1.0f,0.0f,0.0f,-1.0f,0.0f,0.0f,-1.0f,0.0f,0.0f,-1.0f,0.0f,0.0f,-1.0f,0.0f,
+            1.0f,0.0f,0.0f,1.0f,0.0f,0.0f,1.0f,0.0f,0.0f,1.0f,0.0f,0.0f,1.0f,0.0f,0.0f,1.0f,0.0f,0.0f,
+            0.0f,1.0f,0.0f,0.0f,1.0f,0.0f,0.0f,1.0f,0.0f,0.0f,1.0f,0.0f,0.0f,1.0f,0.0f,0.0f,1.0f,0.0f,
+            -1.0f,0.0f,0.0f,-1.0f,0.0f,0.0f,-1.0f,0.0f,0.0f,-1.0f,0.0f,0.0f,-1.0f,0.0f,0.0f,-1.0f,0.0f,0.0f,
+            0.0f,0.0f,-1.0f,0.0f,0.0f,-1.0f,0.0f,0.0f,-1.0f,0.0f,0.0f,-1.0f,0.0f,0.0f,-1.0f,0.0f,0.0f,-1.0f,
+            0.0f,0.0f,1.0f,0.0f,0.0f,1.0f,0.0f,0.0f,1.0f,0.0f,0.0f,1.0f,0.0f,0.0f,1.0f,0.0f,0.0f,1.0f
+    };
+
+    /*float cube2Positions[108] = //36 vertex, every face using two triangles, 2x6 = 12 triangles x 3 vertex
 			{ -1.0,-1.0,0.0,1.0,1.0,0.0,1.0,-1.0,0.0,1.0,1.0,0.0,-1.0,-1.0,0.0,-1.0,1.0,0.0,
             1.0,1.0,0.0,1.0,1.0,-1.0,-1.0,1.0,-1.0,-1.0,1.0,0.0,-1.0,1.0,-1.0,1.0,1.0,0.0,
             -1.0,-1.0,0.0,1.0,-1.0,0.0,-1.0,-1.0,-1.0,1.0,-1.0,-1.0,-1.0,-1.0,-1.0,1.0,-1.0,0.0,
             -1.0,-1.0,-1.0,1.0,-1.0,-1.0,-1.0,1.0,-1.0,1.0,1.0,-1.0,1.0,-1.0,-1.0,-1.0,1.0,-1.0,
             -1.0,-1.0,-1.0,-1.0,1.0,-1.0,-1.0,-1.0,0.0,-1.0,1.0,0.0,-1.0,-1.0,0.0,-1.0,1.0,-1.0,
+            1.0,-1.0,-1.0,1.0,1.0,-1.0,1.0,-1.0,0.0,1.0,1.0,0.0,1.0,-1.0,0.0,1.0,1.0,-1.0
+            };*/
+
+    float cube2Positions[108] = //36 vertex, every face using two triangles, 2x6 = 12 triangles x 3 vertex
+			{ -1.0,-1.0,-1.0,-1.0,1.0,-1.0,-1.0,-1.0,0.0,-1.0,1.0,0.0,-1.0,-1.0,0.0,-1.0,1.0,-1.0,
+            -1.0,-1.0,0.0,1.0,-1.0,0.0,-1.0,-1.0,-1.0,1.0,-1.0,-1.0,-1.0,-1.0,-1.0,1.0,-1.0,0.0,
+            -1.0,-1.0,0.0,1.0,1.0,0.0,1.0,-1.0,0.0,1.0,1.0,0.0,-1.0,-1.0,0.0,-1.0,1.0,0.0,
+            1.0,1.0,0.0,1.0,1.0,-1.0,-1.0,1.0,-1.0,-1.0,1.0,0.0,-1.0,1.0,-1.0,1.0,1.0,0.0,
+            -1.0,-1.0,-1.0,1.0,-1.0,-1.0,-1.0,1.0,-1.0,1.0,1.0,-1.0,1.0,-1.0,-1.0,-1.0,1.0,-1.0,
             1.0,-1.0,-1.0,1.0,1.0,-1.0,1.0,-1.0,0.0,1.0,1.0,0.0,1.0,-1.0,0.0,1.0,1.0,-1.0
             };
 
@@ -1079,8 +1353,19 @@ void setupVertices(void) {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(cubePositions), cubePositions, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, vbo[13]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(cube2Positions), cube2Positions, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[14]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(normalsCube), normalsCube, GL_STATIC_DRAW);
 
-    //SPHERE
+
+
+
+
+
+    /* Model : Sphere(sky)
+    *  Vertices
+    *  Textures
+    *  Normals
+    */
     std::vector<int> ind = mySphere.getIndices();
 	std::vector<glm::vec3> vert = mySphere.getVertices();
 	std::vector<glm::vec2> tex = mySphere.getTexCoords();
