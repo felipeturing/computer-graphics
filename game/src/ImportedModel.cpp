@@ -21,13 +21,13 @@ ImportedModel::ImportedModel(const char *filePath) {
 	}
 
     for(int i = 0; i < numVertices; i++){
-        glm::vec3 & v0 = vertices[i+0];
-        glm::vec3 & v1 = vertices[i+1];
-        glm::vec3 & v2 = vertices[i+2];
+        glm::vec3 v0 = vertices[i+0];
+        glm::vec3 v1 = vertices[i+1];
+        glm::vec3 v2 = vertices[i+2];
 
-        glm::vec2 & uv0 = texCoords[i+0];
-        glm::vec2 & uv1 = texCoords[i+1];
-        glm::vec2 & uv2 = texCoords[i+2];
+        glm::vec2 uv0 = texCoords[i+0];
+        glm::vec2 uv1 = texCoords[i+1];
+        glm::vec2 uv2 = texCoords[i+2];
 
         glm::vec3 deltaPos1 = v1-v0;
         glm::vec3 deltaPos2 = v2-v0;

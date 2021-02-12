@@ -6,6 +6,7 @@ in vec3 originalVertex;
 in vec4 shadow_coord;
 in vec2 tc;
 
+
 out vec4 fragcolor;
 
 struct PositionalLight
@@ -30,7 +31,7 @@ uniform int obj;
 layout (binding=0) uniform sampler2DShadow shadowTex;
 layout (binding=1) uniform sampler2D s;
 layout (binding=2) uniform sampler2D normMap;
-
+layout (binding=3) uniform sampler2D h;
 
 vec3 calcNewNormal()
 {
@@ -80,7 +81,7 @@ void main(void){
 	shadowFactor = shadowFactor / 64.0;*/
 
 	// this would produce normal hard shadows
-	shadowFactor = lookup(0.0, 0.0);
+    shadowFactor = lookup(0.0, 0.0);
 
     vec4 shadowColor = globalAmbient * material.ambient
 				+ light.ambient * material.ambient;
@@ -89,14 +90,28 @@ void main(void){
 				* pow(max(dot(H,N),0.0),material.shininess*3.0);
 
 
-    if (obj==43){ // human body
-        color= vec4(0.55,0.0,0.55,1.0);
+   if (obj >= 40 && obj <= 49 ){ // human body
+        if(obj == 41) color = vec4(0.0,0.0,0.0,1.0); //head
+        else if (obj == 42) color = vec4(0.0,0.0,0.55,1.0); // clothing t-shirt and shoes and hands
+        else if (obj == 43) color = vec4(255.0/255.0,224.0/255.0,189.0/255.0,1.0); //skin
+        else if (obj == 44) color = vec4(0.55,0.0,0.55,1.0); //clothing shorts
+        //else if (obj == 45)
+        //else if (obj == 46)
+        else color = vec4(255.0/255.0,224.0/255.0,189.0/255.0,1.0);
     }else{
 	    color = texture(s,tc);
     }
 
+    color = 0.6*color + 0.4*texture(s,tc);
 
-    fragcolor = vec4((shadowColor.xyz + shadowFactor*(0.5*lightedColor.xyz+ 0.5*color.xyz)),1.0);
+    if (obj == 1) {
+            fragcolor = vec4((shadowColor.xyz + shadowFactor*(0.3*lightedColor.xyz + 0.6*color.xyz)),1.0);
+    }else if(obj == 4){
+            fragcolor = vec4((shadowColor.xyz + shadowFactor*(0.7*lightedColor.xyz+ 0.3*color.xyz)),1.0);
+    }else{
+            fragcolor = vec4((shadowColor.xyz + shadowFactor*(0.5*lightedColor.xyz+ 0.5*color.xyz)),1.0);
+    }
+
     //fragcolor = 0.5*lightedColor + 0.5*texture(s,tc);
 }
 
