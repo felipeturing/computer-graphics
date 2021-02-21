@@ -70,7 +70,6 @@ void main(void){
 	shadowFactor += lookup( 0.5*swidth + o.x, -0.5*swidth - o.y);
 	shadowFactor = shadowFactor / 4.0;*/
 
-    //shadowFactor = lookup(0.0, 0.0);
     // hi res PCF
     /*float width = 2.5;
 	float endp = width * 3.0 + width/2.0;
@@ -81,6 +80,7 @@ void main(void){
 	shadowFactor = shadowFactor / 64.0;*/
 
 	// this would produce normal hard shadows
+
     shadowFactor = lookup(0.0, 0.0);
 
     vec4 shadowColor = globalAmbient * material.ambient
@@ -105,9 +105,11 @@ void main(void){
     color = 0.6*color + 0.4*texture(s,tc);
 
     if (obj == 1) {
-            fragcolor = vec4((shadowColor.xyz + shadowFactor*(0.3*lightedColor.xyz + 0.6*color.xyz)),1.0);
+            fragcolor = vec4((shadowColor.xyz + shadowFactor*(0.6*lightedColor.xyz + 0.4*color.xyz)),1.0);
     }else if(obj == 4){
             fragcolor = vec4((shadowColor.xyz + shadowFactor*(0.7*lightedColor.xyz+ 0.3*color.xyz)),1.0);
+    }else if(obj == 50){
+            fragcolor = vec4((shadowColor.xyz + shadowFactor*(0.5*lightedColor.xyz+ 0.5*color.xyz)),1.0);
     }else{
             fragcolor = vec4((shadowColor.xyz + shadowFactor*(0.5*lightedColor.xyz+ 0.5*color.xyz)),1.0);
     }

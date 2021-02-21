@@ -31,9 +31,9 @@ uniform mat4 norm_matrix;
 uniform mat4 shadowMVP;
 
 layout(binding=0) uniform sampler2DShadow shadowTex;
-layout(binding=1) uniform sampler2D s;
-layout(binding=2) uniform sampler2D normMap;
-layout(binding=3) uniform sampler2D h;
+layout(binding=1) uniform sampler2D s;//textura
+layout(binding=2) uniform sampler2D normMap;//mapa de normales
+layout(binding=3) uniform sampler2D h;//altura
 
 void main(void){
     vec3 newVertPos;
