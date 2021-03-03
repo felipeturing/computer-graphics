@@ -1,0 +1,35 @@
+Instalamos premake:
+Descargar desde:
+https://premake.github.io/download.html#v4
+
+Proseguir los pasos indicados para su instalación
+
+Desde el repositorio:
+https://github.com/SpartanJ/SOIL2
+
+git clone https://github.com/SpartanJ/SOIL2
+
+cd SOIL2
+
+premake4 gmake
+
+cd make/*YOURPLATFORM*/
+
+make config=release
+
+*asegurarse que no se obtenga ningun error*
+
+cd ../../
+
+sudo cp lib/linux/libsoil2.a /usr/lib/x86_64-linux-gnu/
+sudo cp lib/linux/libsoil2-debug.a /usr/lib/x86_64-linux-gnu/
+
+
+luego desde nuestro código:
+#include <SOIL2/soil2.h>
+o
+#include <SOIL2/SOIL2.h>
+
+
+compilamos:
+g++ *.cpp -lmysqlclient -lm -lGL -lGLU -lglut -lGLEW -lglfw -lX11 -lXxf86vm -lXrandr -lpthread -lXi -ldl -lXinerama -lXcursor -L/usr/include/ -lsoil2 -o main.out
